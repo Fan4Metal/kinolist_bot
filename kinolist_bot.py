@@ -196,6 +196,10 @@ async def send_welcome(message: types.Message):
     """
     await message.reply("Привет, я Кinolist Bot!\nОтправьте мне список фильмов, и я пришлю его в формате pdf.")
 
+@dp.message_handler(commands=['lisa', 'Lisa'])
+async def send_welcome(message: types.Message):
+    await message.reply_sticker("CAACAgIAAxkBAAEEjSZiZXLQqPDFY70qC0m9PPH2AAEJjfgAAjIAA-Sgzgd7_cFVbY2YfiQE")
+    log.info("Отправлен стикер")
 
 @dp.message_handler()
 async def reply(message: types.Message):
@@ -219,9 +223,9 @@ async def reply(message: types.Message):
             id = str(found_films[0].id)
             log.info(f'Найден фильм: {found_films[0]}, kinopoisk id: {id}')
             film_codes.append(id)
-    log.info(film_not_found)
+    log.info(f'Не найдено: {", ".join(film_not_found)}')
     if len(film_codes) < 1:
-        await message.reply("Упс, ничего не найдено!")
+        await message.reply("Ой, ничего не найдено!")
         return
     err = 0
     full_films_list = []
@@ -239,7 +243,7 @@ async def reply(message: types.Message):
         doc = Document(file_path)
     except Exception:
         log.warning('Не найден шаблон "template.docx". Список не создан.')
-        await message.reply("Упс, что-то сломалось!((")
+        await message.reply("Ой, что-то сломалось!((")
         return
     table_num = len(full_films_list)
     if table_num > 1:
@@ -260,10 +264,10 @@ async def reply(message: types.Message):
     convert("list.docx", "list.pdf")
     with open('./list.pdf', 'rb') as pdf:
         if len(film_not_found) > 0:
-            text = "Вот списочек)" + "\n" + "А вот эти фильмы не смог найти:" + "\n" + "\n".join(film_not_found)
+            text = "Список готов!" + "\n" + "Правда, вот эти фильмы не смог найти:" + "\n" + "\n".join(film_not_found)
             await message.reply_document(pdf, caption=text)
         else:
-            await message.reply_document(pdf, caption='Вот списочек)')
+            await message.reply_document(pdf, caption='Список готов!')
     os.remove("list.docx")
     os.remove("list.pdf")
     shutil.rmtree("./covers/")
