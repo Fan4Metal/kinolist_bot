@@ -22,7 +22,6 @@ VER = '0.1.1'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("Kinolist_Bot")
@@ -37,8 +36,8 @@ def is_api_ok(api):
     try:
         api_client = KinopoiskApiClient(api)
         request = FilmRequest(328)
-        response = api_client.films.send_film_request(request)
-    except:
+        api_client.films.send_film_request(request)
+    except Exception:
         return False
     else:
         return True
@@ -133,8 +132,6 @@ def write_film_to_table(current_table, filminfo, folder):
 
     # загрузка постера
     image_url = filminfo[5]
-    # if not os.path.isdir("/" + folder + "/covers"):
-    #     os.mkdir("/" + folder + "/covers")
     file_path = './' + folder + '/covers/' + str(filminfo[6] + '.jpg')
     resp = requests.get(image_url, stream=True)
     if resp.status_code == 200:
@@ -194,19 +191,24 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
-    
     log.info(f"Start (chat_id: {message.chat.id})")
     await message.reply("Привет, я Кinolist Bot!\nОтправьте мне список фильмов, и я пришлю его в формате pdf.")
 
+
 @dp.message_handler(commands=['lisa', 'Lisa'])
-async def send_welcome(message: types.Message):
+async def send_heart(message: types.Message):
     await message.reply_sticker("CAACAgIAAxkBAAEEjSZiZXLQqPDFY70qC0m9PPH2AAEJjfgAAjIAA-Sgzgd7_cFVbY2YfiQE")
     log.info("Отправлен стикер")
 
+
 @dp.message_handler()
 async def reply(message: types.Message):
+    if not is_api_ok(KINOPOISK_API_TOKEN):
+        log.warning("API error.")
+        await message.reply("Ой, что-то сломалось!((\n" + "(API error)")
+        return
     chat_id = str(message.chat.id)
-    log.info(f"Start list generate (chat_id: {chat_id}")
+    log.info(f"Start list generate (chat_id: {chat_id})")
     film_list = message.text.split('\n')
     film_list = list(filter(None, film_list))
     log.info(film_list)
@@ -227,21 +229,23 @@ async def reply(message: types.Message):
             id = str(found_films[0].id)
             log.info(f'Найден фильм: {found_films[0]}, kinopoisk id: {id}')
             film_codes.append(id)
-    log.info(f'Не найдено: {", ".join(film_not_found)}')
+    if len(film_not_found) > 0:
+        log.info(f'Не найдено: {", ".join(film_not_found)}')
     if len(film_codes) < 1:
         await message.reply("Ой, ничего не найдено!")
         return
-    err = 0
     full_films_list = []
     for film_code in film_codes:
         try:
             film_info = get_film_info(film_code, KINOPOISK_API_TOKEN)
             full_films_list.append(film_info)
-        except:
+        except Exception:
             log.warning(f'{film_code} - ошибка')
-            err += 1
         else:
             continue
+    if len(full_films_list) < 1:
+        await message.reply("Ни один фильм не найден!")
+        return
     file_path = get_resource_path('template.docx')
     try:
         doc = Document(file_path)
@@ -252,9 +256,6 @@ async def reply(message: types.Message):
     table_num = len(full_films_list)
     if table_num > 1:
         clone_first_table(doc, table_num - 1)
-    elif table_num < 1:
-        await message.reply("Ни один фильм не найден!")
-        return
     if not os.path.isdir(chat_id):
         os.mkdir('./' + chat_id)
         os.mkdir('./' + chat_id + '/covers/')
