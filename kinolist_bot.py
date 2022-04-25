@@ -18,7 +18,7 @@ from docx2pdf import convert
 
 import config
 
-VER = '0.1.0'
+VER = '0.1.1'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
@@ -87,7 +87,7 @@ def get_film_info(film_code, api):
     return filmlist + stafflist
 
 
-def write_film_to_table(current_table, filminfo):
+def write_film_to_table(current_table, filminfo, folder):
     '''Заполнение таблицы в файле docx.'''
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
     run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
@@ -133,9 +133,9 @@ def write_film_to_table(current_table, filminfo):
 
     # загрузка постера
     image_url = filminfo[5]
-    if not os.path.isdir("covers"):
-        os.mkdir("covers")
-    file_path = './covers/' + str(filminfo[6] + '.jpg')
+    # if not os.path.isdir("/" + folder + "/covers"):
+    #     os.mkdir("/" + folder + "/covers")
+    file_path = './' + folder + '/covers/' + str(filminfo[6] + '.jpg')
     resp = requests.get(image_url, stream=True)
     if resp.status_code == 200:
         resp.raw.decode_content = True
@@ -194,6 +194,8 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
+    
+    log.info(f"Start (chat_id: {message.chat.id})")
     await message.reply("Привет, я Кinolist Bot!\nОтправьте мне список фильмов, и я пришлю его в формате pdf.")
 
 @dp.message_handler(commands=['lisa', 'Lisa'])
@@ -203,6 +205,8 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def reply(message: types.Message):
+    chat_id = str(message.chat.id)
+    log.info(f"Start list generate (chat_id: {chat_id}")
     film_list = message.text.split('\n')
     film_list = list(filter(None, film_list))
     log.info(film_list)
@@ -251,26 +255,26 @@ async def reply(message: types.Message):
     elif table_num < 1:
         await message.reply("Ни один фильм не найден!")
         return
-    # запись информации в таблицы
+    if not os.path.isdir(chat_id):
+        os.mkdir('./' + chat_id)
+        os.mkdir('./' + chat_id + '/covers/')
     for i in range(table_num):
         current_table = doc.tables[i]
-        write_film_to_table(current_table, full_films_list[i])
+        write_film_to_table(current_table, full_films_list[i], chat_id)
         log.info(f'{full_films_list[i][0]} - ок')
     try:
-        doc.save('./list.docx')
+        doc.save('./' + chat_id + '/list.docx')
     except PermissionError:
         log.warning("Ошибка! Нет доступа к файлу list.docx. Список не создан.")
         await message.reply("Ой, что-то сломалось!((")
-    convert("list.docx", "list.pdf")
-    with open('./list.pdf', 'rb') as pdf:
+    convert('./' + chat_id + "/list.docx", './' + chat_id + "/list.pdf")
+    with open('./' + chat_id + "/list.pdf", 'rb') as pdf:
         if len(film_not_found) > 0:
             text = "Список готов!" + "\n" + "Правда, вот эти фильмы не смог найти:" + "\n" + "\n".join(film_not_found)
             await message.reply_document(pdf, caption=text)
         else:
             await message.reply_document(pdf, caption='Список готов!')
-    os.remove("list.docx")
-    os.remove("list.pdf")
-    shutil.rmtree("./covers/")
+    shutil.rmtree('./' + chat_id)
     return
 
 
