@@ -18,7 +18,7 @@ from docx2pdf import convert
 
 import config
 
-VER = '0.1.1'
+VER = '0.1.2'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
@@ -209,6 +209,10 @@ async def reply(message: types.Message):
         return
     chat_id = str(message.chat.id)
     log.info(f"Start list generate (chat_id: {chat_id})")
+    if os.path.isdir(chat_id):
+        log.info(f"Папка {chat_id} обнаружена")
+        await message.reply("Подождите, я все еще работаю!")
+        return
     film_list = message.text.split('\n')
     film_list = list(filter(None, film_list))
     log.info(film_list)
