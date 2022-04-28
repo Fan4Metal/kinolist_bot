@@ -132,7 +132,7 @@ def write_film_to_table(current_table, filminfo, folder):
 
     # загрузка постера
     image_url = filminfo[5]
-    file_path = './' + folder + '/covers/' + str(filminfo[6] + '.jpg')
+    file_path = folder + '/covers/' + str(filminfo[6] + '.jpg')
     resp = requests.get(image_url, stream=True)
     if resp.status_code == 200:
         resp.raw.decode_content = True
@@ -261,25 +261,25 @@ async def reply(message: types.Message):
     if table_num > 1:
         clone_first_table(doc, table_num - 1)
     if not os.path.isdir(chat_id):
-        os.mkdir('./' + chat_id)
-        os.mkdir('./' + chat_id + '/covers/')
+        os.mkdir(chat_id)
+        os.mkdir(chat_id + '/covers/')
     for i in range(table_num):
         current_table = doc.tables[i]
         write_film_to_table(current_table, full_films_list[i], chat_id)
         log.info(f'{full_films_list[i][0]} - ок')
     try:
-        doc.save('./' + chat_id + '/list.docx')
+        doc.save(chat_id + '/list.docx')
     except PermissionError:
         log.warning("Ошибка! Нет доступа к файлу list.docx. Список не создан.")
         await message.reply("Ой, что-то сломалось!((")
-    convert('./' + chat_id + "/list.docx", './' + chat_id + "/list.pdf")
-    with open('./' + chat_id + "/list.pdf", 'rb') as pdf:
+    convert(chat_id + "/list.docx", chat_id + "/list.pdf")
+    with open(chat_id + "/list.pdf", 'rb') as pdf:
         if len(film_not_found) > 0:
             text = "Список готов!" + "\n" + "Правда, вот эти фильмы не смог найти:" + "\n" + "\n".join(film_not_found)
             await message.reply_document(pdf, caption=text)
         else:
             await message.reply_document(pdf, caption='Список готов!')
-    shutil.rmtree('./' + chat_id)
+    shutil.rmtree(chat_id)
     return
 
 
