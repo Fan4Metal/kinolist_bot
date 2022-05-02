@@ -186,6 +186,30 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
+def find_kp_id(film_list):
+    film_codes = []
+    film_not_found = []
+    for film in film_list:
+        try:
+            found_films = Movie.objects.search(film)
+        except Exception:
+            log.info(f'{film} не найден')
+            film_not_found.append(film)
+            continue
+        else:
+            if len(found_films) < 1:
+                log.info(f'{film} не найден')
+                film_not_found.append(film)
+                continue
+            id = str(found_films[0].id)
+            log.info(f'Найден фильм: {found_films[0]}, kinopoisk id: {id}')
+            film_codes.append(id)
+    result = []
+    result.append(film_codes)
+    result.append(film_not_found)
+    return result
+
+
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
     """
@@ -216,23 +240,9 @@ async def reply(message: types.Message):
     film_list = message.text.split('\n')
     film_list = list(filter(None, film_list))
     log.info(film_list)
-    film_codes = []
-    film_not_found = []
-    for film in film_list:
-        try:
-            found_films = Movie.objects.search(film)
-        except Exception:
-            log.info(f'{film} не найден')
-            film_not_found.append(film)
-            continue
-        else:
-            if len(found_films) < 1:
-                log.info(f'{film} не найден')
-                film_not_found.append(film)
-                continue
-            id = str(found_films[0].id)
-            log.info(f'Найден фильм: {found_films[0]}, kinopoisk id: {id}')
-            film_codes.append(id)
+    kp_id = find_kp_id(film_list)
+    film_codes = kp_id[0]
+    film_not_found = kp_id[1]
     if len(film_not_found) > 0:
         log.info(f'Не найдено: {", ".join(film_not_found)}')
     if len(film_codes) < 1:
