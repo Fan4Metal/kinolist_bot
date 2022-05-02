@@ -187,6 +187,11 @@ def get_resource_path(relative_path):
 
 
 def find_kp_id(film_list):
+    '''
+    Возвращает список из двух списков: 
+        1) Список найденных kinopoisk_id
+        2) Список не найденных фильмов
+    '''
     film_codes = []
     film_not_found = []
     for film in film_list:
@@ -229,25 +234,30 @@ async def send_heart(message: types.Message):
 async def reply(message: types.Message):
     if not is_api_ok(KINOPOISK_API_TOKEN):
         log.warning("API error.")
-        await message.reply("Ой, что-то сломалось!((\n" + "(API error)")
+        await message.reply("Ой, что-то сломалось!((\n(API error)")
         return
+    
     chat_id = str(message.chat.id)
     log.info(f"Start list generate (chat_id: {chat_id})")
     if os.path.isdir(chat_id):
         log.info(f"Папка {chat_id} обнаружена")
         await message.reply("Подождите, я все еще работаю!")
         return
+
     film_list = message.text.split('\n')
     film_list = list(filter(None, film_list))
     log.info(film_list)
+
     kp_id = find_kp_id(film_list)
     film_codes = kp_id[0]
     film_not_found = kp_id[1]
+
     if len(film_not_found) > 0:
         log.info(f'Не найдено: {", ".join(film_not_found)}')
     if len(film_codes) < 1:
         await message.reply("Ой, ничего не найдено!")
         return
+
     full_films_list = []
     for film_code in film_codes:
         try:
@@ -260,6 +270,7 @@ async def reply(message: types.Message):
     if len(full_films_list) < 1:
         await message.reply("Ни один фильм не найден!")
         return
+
     file_path = get_resource_path('template.docx')
     try:
         doc = Document(file_path)
@@ -267,6 +278,7 @@ async def reply(message: types.Message):
         log.warning('Не найден шаблон "template.docx". Список не создан.')
         await message.reply("Ой, что-то сломалось!((")
         return
+
     table_num = len(full_films_list)
     if table_num > 1:
         clone_first_table(doc, table_num - 1)
@@ -282,13 +294,16 @@ async def reply(message: types.Message):
     except PermissionError:
         log.warning("Ошибка! Нет доступа к файлу list.docx. Список не создан.")
         await message.reply("Ой, что-то сломалось!((")
+
     convert(chat_id + "/list.docx", chat_id + "/list.pdf")
+
     with open(chat_id + "/list.pdf", 'rb') as pdf:
         if len(film_not_found) > 0:
             text = "Список готов!" + "\n" + "Правда, вот эти фильмы не смог найти:" + "\n" + "\n".join(film_not_found)
             await message.reply_document(pdf, caption=text)
         else:
             await message.reply_document(pdf, caption='Список готов!')
+
     shutil.rmtree(chat_id)
     return
 
