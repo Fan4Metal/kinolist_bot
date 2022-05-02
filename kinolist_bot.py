@@ -18,7 +18,7 @@ from docx2pdf import convert
 
 import config
 
-VER = '0.1.2'
+VER = '0.1.3'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
@@ -194,16 +194,17 @@ def find_kp_id(film_list):
     '''
     film_codes = []
     film_not_found = []
+    found_films = []
     for film in film_list:
         try:
             found_films = Movie.objects.search(film)
         except Exception:
-            log.info(f'{film} не найден')
+            log.info(f'{film} не найден (exeption)')
             film_not_found.append(film)
             continue
         else:
             if len(found_films) < 1:
-                log.info(f'{film} не найден')
+                log.info(f'{film} не найден (len < 1)')
                 film_not_found.append(film)
                 continue
             id = str(found_films[0].id)
