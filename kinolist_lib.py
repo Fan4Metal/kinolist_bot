@@ -176,6 +176,33 @@ def find_kp_id(film_list):
     return result
 
 
+def find_kp_id_2(film_list, api):
+    film_codes = []
+    film_not_found = []
+    for film in film_list:
+        payload = {'keyword': film, 'page': 1}
+        headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
+        try:
+            r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
+            if r.status_code == 200:
+                resp_json = r.json()
+                id = resp_json['films'][0]['filmId']
+                found_film = resp_json['films'][0]['nameRu']
+                log.info(f'Найден фильм: {found_film}, kinopoisk id: {id}')
+                film_codes.append(id)
+            else:
+                log.warning(f'Ошибка доступа к https://kinopoiskapiunofficial.tech')
+                return
+        except:
+            log.info(f'{film} не найден (exeption)')
+            film_not_found.append(film)
+            continue
+    result = []
+    result.append(film_codes)
+    result.append(film_not_found)
+    return result
+
+
 def write_film_to_table(current_table, filminfo:list):
     '''Заполнение таблицы в файле docx.'''
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
@@ -246,6 +273,7 @@ if __name__ == "__main__":
     from config import KINOPOISK_API_TOKEN
     file_path = get_resource_path('template.docx')
     doc = Document(file_path)
-    kp_codes = find_kp_id(['Человек из стали', 'Аквамен'])
+    # kp_codes = find_kp_id(['Человек из стали', 'Аквамен'])
+    kp_codes = find_kp_id_2(['Человек из стали', 'Аквамен'], KINOPOISK_API_TOKEN)
     full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
     write_all_films_to_docx(doc, full_list, './test/list.docx')

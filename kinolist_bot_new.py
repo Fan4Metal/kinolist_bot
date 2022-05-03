@@ -43,7 +43,7 @@ async def reply(message: types.Message):
         return
     
     chat_id = str(message.chat.id)
-    log.info(f"Start list generate (chat_id: {chat_id})")
+    log.info(f"Начало создания списка для chat_id: {chat_id}")
     if os.path.isdir(chat_id):
         log.info(f"Папка {chat_id} обнаружена")
         await message.reply("Подождите, я все еще работаю!")
@@ -53,7 +53,7 @@ async def reply(message: types.Message):
     film_list = list(filter(None, film_list))
     log.info("Запрос: " + ", ".join(film_list))
 
-    kp_id = find_kp_id(film_list)
+    kp_id = find_kp_id_2(film_list, KINOPOISK_API_TOKEN)
     film_codes = kp_id[0]
     film_not_found = kp_id[1]
 
@@ -75,6 +75,7 @@ async def reply(message: types.Message):
         log.warning('Не найден шаблон "template.docx". Список не создан.')
         await message.reply("Ой, что-то сломалось!((")
         return
+
     if not os.path.isdir(chat_id):
         os.mkdir(chat_id)
 
