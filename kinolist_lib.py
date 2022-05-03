@@ -19,6 +19,18 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("Kinolist_Lib")
 
 
+def is_api_ok(api):
+    '''Проверка авторизации.'''
+    try:
+        api_client = KinopoiskApiClient(api)
+        request = FilmRequest(328)
+        api_client.films.send_film_request(request)
+    except Exception:
+        return False
+    else:
+        return True
+
+
 def image2file(image):
     """Return `image` as PNG file-like object."""
     image_file = io.BytesIO()
@@ -121,7 +133,7 @@ def get_film_info(film_code, api):
     return result
 
 
-def get_full_film_list(film_codes:list, api):
+def get_full_film_list(film_codes, api):
     full_films_list = []
     for film_code in film_codes:
         try:
@@ -148,7 +160,6 @@ def find_kp_id(film_list):
             found_films = Movie.objects.search(film)
         except Exception:
             log.info(f'{film} не найден (exeption)')
-            print(Exception)
             film_not_found.append(film)
             continue
         else:
@@ -224,10 +235,10 @@ def write_all_films_to_docx(document, films:list, path:str):
         write_film_to_table(current_table, films[i])
         log.info(f'{films[i][0]} - ок')
     try:
-        doc.save(path)
+        document.save(path)
         log.info(f'Файл "{path}" записан.')
     except PermissionError:
-        log.warning(f"Ошибка! Нет доступа к файлу {path}. Список не создан.")
+        log.warning(f"Ошибка! Нет доступа к файлу {path}. Список не сохранен.")
         raise Exception
 
 
