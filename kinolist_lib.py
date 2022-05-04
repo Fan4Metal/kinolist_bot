@@ -106,13 +106,18 @@ def get_film_info(film_code, api):
     # с помощью регулярного выражения находим значение стран в кавычках ''
     countries = re.findall("'([^']*)'", str(response_film.film.countries))
     # имя файла
-    filename = response_film.film.name_ru
+    if response_film.film.name_ru != None:
+        file_name = response_film.film.name_ru
+        film_name = response_film.film.name_ru
+    else:
+        file_name = response_film.film.name_original
+        film_name = response_film.film.name_original
     # очистка имени файла от запрещенных символов
-    trtable = filename.maketrans('', '', '\/:*?"<>')
-    filename = filename.translate(trtable)
+    trtable = file_name.maketrans('', '', '\/:*?"<>')
+    file_name = file_name.translate(trtable)
     filmlist = [
-        response_film.film.name_ru, response_film.film.year, response_film.film.rating_kinopoisk, countries,
-        response_film.film.description, response_film.film.poster_url, filename
+        film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries,
+        response_film.film.description, response_film.film.poster_url, file_name
     ]
     result = filmlist + stafflist
     # загрузка постера
@@ -139,7 +144,8 @@ def get_full_film_list(film_codes, api):
         try:
             film_info = get_film_info(film_code, api)
             full_films_list.append(film_info)
-        except Exception:
+        except Exception as e:
+            print("Exeption:", str(e))
             log.warning(f'{film_code} - ошибка')
         else:
             continue
@@ -186,14 +192,25 @@ def find_kp_id_2(film_list, api):
             r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
             if r.status_code == 200:
                 resp_json = r.json()
-                id = resp_json['films'][0]['filmId']
-                found_film = resp_json['films'][0]['nameRu']
-                log.info(f'Найден фильм: {found_film}, kinopoisk id: {id}')
-                film_codes.append(id)
+                # print(resp_json)
+                if resp_json['searchFilmsCountResult'] == 0:
+                    log.info(f'{film} не найден')
+                    film_not_found.append(film)
+                    continue
+                else:
+                    id = resp_json['films'][0]['filmId']
+                    year = resp_json['films'][0]['year']
+                    if 'nameRu' in resp_json['films'][0]:
+                        found_film = resp_json['films'][0]['nameRu']
+                    else:
+                        found_film = resp_json['films'][0]['nameEn']
+                    log.info(f'Найден фильм: {found_film} ({year}), kinopoisk id: {id}')
+                    film_codes.append(id)
             else:
                 log.warning(f'Ошибка доступа к https://kinopoiskapiunofficial.tech')
                 return
-        except:
+        except Exception as e:
+            log.warning("Exeption:", str(e))
             log.info(f'{film} не найден (exeption)')
             film_not_found.append(film)
             continue
@@ -274,6 +291,6 @@ if __name__ == "__main__":
     file_path = get_resource_path('template.docx')
     doc = Document(file_path)
     # kp_codes = find_kp_id(['Человек из стали', 'Аквамен'])
-    kp_codes = find_kp_id_2(['Человек из стали', 'Аквамен'], KINOPOISK_API_TOKEN)
+    kp_codes = find_kp_id_2(['Тихое место 2'], KINOPOISK_API_TOKEN)
     full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
     write_all_films_to_docx(doc, full_list, './test/list.docx')
