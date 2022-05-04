@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import logging
+import argparse
 from copy import deepcopy
 
 import requests
@@ -286,11 +287,36 @@ def write_all_films_to_docx(document, films:list, path:str):
         raise Exception
 
 
+def file_to_list(file:str):
+    if os.path.isfile(file):
+        with open(file, 'rb') as f:
+            list = [x.decode("UTF-8").rstrip() for x in f]
+        return list
+    else:
+        print(f'Файл {file} не найден.')
+        return
+
+
 if __name__ == "__main__":
     from config import KINOPOISK_API_TOKEN
-    file_path = get_resource_path('template.docx')
-    doc = Document(file_path)
-    # kp_codes = find_kp_id(['Человек из стали', 'Аквамен'])
-    kp_codes = find_kp_id_2(['Тихое место 2'], KINOPOISK_API_TOKEN)
-    full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-    write_all_films_to_docx(doc, full_list, './test/list.docx')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format.")
+    # args = parser.parse_args(['--file', 'films.txt'])
+    # args = parser.parse_args(['-h'])
+    args = parser.parse_args()
+    if args.file:
+        # print(str(args.file[0]))
+        list = file_to_list((args.file[0]))
+        print(*list)
+        file_path = get_resource_path('template.docx')
+        doc = Document(file_path)
+        kp_codes = find_kp_id_2(list, KINOPOISK_API_TOKEN)
+        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
+        write_all_films_to_docx(doc, full_list, './test/list.docx')
+
+    else:
+        file_path = get_resource_path('template.docx')
+        doc = Document(file_path)
+        kp_codes = find_kp_id_2(['Та, которой не было (2019)'], KINOPOISK_API_TOKEN)
+        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
+        write_all_films_to_docx(doc, full_list, './test/list.docx')
