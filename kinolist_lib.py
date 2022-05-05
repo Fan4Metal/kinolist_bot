@@ -5,6 +5,7 @@ import sys
 import logging
 import argparse
 from copy import deepcopy
+import time
 
 import requests
 from docx import Document
@@ -14,6 +15,7 @@ from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.film_request import FilmRequest
 from kinopoisk_unofficial.request.staff.staff_request import StaffRequest
 from PIL import Image
+from rich.progress import track
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -141,13 +143,13 @@ def get_film_info(film_code, api):
 
 def get_full_film_list(film_codes, api):
     full_films_list = []
-    for film_code in film_codes:
+    for film_code in track(film_codes, description="Загрузка информации..."):
         try:
             film_info = get_film_info(film_code, api)
             full_films_list.append(film_info)
         except Exception as e:
             print("Exeption:", str(e))
-            log.warning(f'{film_code} - ошибка')
+            # log.warning(f'{film_code} - ошибка')
         else:
             continue
     return full_films_list
@@ -187,6 +189,7 @@ def find_kp_id_2(film_list, api):
     film_codes = []
     film_not_found = []
     for film in film_list:
+        time.sleep(0.2)
         payload = {'keyword': film, 'page': 1}
         headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
         try:
@@ -275,10 +278,9 @@ def write_all_films_to_docx(document, films:list, path:str):
     table_num = len(films)
     if table_num > 1:
         clone_first_table(document, table_num - 1)
-    for i in range(table_num):
+    for i in track(range(table_num), description="Запись в таблицу...   "):
         current_table = document.tables[i]
         write_film_to_table(current_table, films[i])
-        log.info(f'{films[i][0]} - ок')
     try:
         document.save(path)
         log.info(f'Файл "{path}" записан.')
@@ -301,13 +303,11 @@ if __name__ == "__main__":
     from config import KINOPOISK_API_TOKEN
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format.")
-    # args = parser.parse_args(['--file', 'films.txt'])
-    # args = parser.parse_args(['-h'])
-    args = parser.parse_args()
+    args = parser.parse_args(['--file', 'films.txt'])
+    # args = parser.parse_args()
     if args.file:
-        # print(str(args.file[0]))
         list = file_to_list((args.file[0]))
-        print(*list)
+        print("Запрос: ", *list)
         file_path = get_resource_path('template.docx')
         doc = Document(file_path)
         kp_codes = find_kp_id_2(list, KINOPOISK_API_TOKEN)
@@ -317,6 +317,6 @@ if __name__ == "__main__":
     else:
         file_path = get_resource_path('template.docx')
         doc = Document(file_path)
-        kp_codes = find_kp_id_2(['Та, которой не было (2019)'], KINOPOISK_API_TOKEN)
+        kp_codes = find_kp_id_2(['Спутник (2019)'], KINOPOISK_API_TOKEN)
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
         write_all_films_to_docx(doc, full_list, './test/list.docx')
