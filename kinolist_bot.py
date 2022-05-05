@@ -4,7 +4,6 @@ import os
 
 from aiogram import Bot, Dispatcher, executor, types
 from docx2pdf import convert
-
 from kinolist_lib import *
 import config
 
