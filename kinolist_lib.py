@@ -152,7 +152,7 @@ def get_full_film_list(film_codes:list, api:str):
     """
     full_films_list = []
     for film_code in track(film_codes, description="Загрузка информации...", 
-                           complete_style="red", finished_style="green"):
+                           complete_style="white", finished_style="green"):
         try:
             film_info = get_film_info(film_code, api)
             full_films_list.append(film_info)
@@ -258,7 +258,7 @@ def write_all_films_to_docx(document, films:list, path:str):
     if table_num > 1:
         clone_first_table(document, table_num - 1)
     for i in track(range(table_num), description="Запись в таблицу...   ",
-                   complete_style="red", finished_style="green"):
+                   complete_style="white", finished_style="green"):
         current_table = document.tables[i]
         write_film_to_table(current_table, films[i])
     try:
@@ -292,12 +292,12 @@ if __name__ == "__main__":
         kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
         print("Не найдено:", ", ".join(kp_codes[1]))
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-        write_all_films_to_docx(doc, full_list, './test/list.docx')
+        write_all_films_to_docx(doc, full_list, './result/list.docx')
 
     else:
-        film = ['матрица']
+        film = ['матрица', 'matrix 2', 'matrix 3']
         kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
         # file_path = get_resource_path('template.docx')
         # doc = Document(file_path)
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-        # write_all_films_to_docx(doc, full_list, './test/list.docx')
+        # write_all_films_to_docx(doc, full_list, './result/list.docx')
