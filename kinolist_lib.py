@@ -10,7 +10,6 @@ import time
 import requests
 from docx import Document
 from docx.shared import Cm, Pt, RGBColor
-from kinopoisk.movie import Movie
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.film_request import FilmRequest
 from kinopoisk_unofficial.request.staff.staff_request import StaffRequest
@@ -141,7 +140,16 @@ def get_film_info(film_code, api):
     return result
 
 
-def get_full_film_list(film_codes, api):
+def get_full_film_list(film_codes:list, api:str):
+    """Загружает информацию о фильмах
+
+    Args:
+        film_codes (list): Список kinopoisk_id фильмов
+        api (str): Kinopoisk API token
+
+    Returns:
+        list: Список с полной информацией о фильмах для записи в таблицу.
+    """
     full_films_list = []
     for film_code in track(film_codes, description="Загрузка информации..."):
         try:
@@ -155,37 +163,7 @@ def get_full_film_list(film_codes, api):
     return full_films_list
 
 
-def find_kp_id(film_list):
-    '''
-    Возвращает список из двух списков: 
-        1) Список найденных kinopoisk_id
-        2) Список не найденных фильмов
-    '''
-    film_codes = []
-    film_not_found = []
-    found_films = []
-    for film in film_list:
-        try:
-            found_films = Movie.objects.search(film)
-        except Exception:
-            log.info(f'{film} не найден (exeption)')
-            film_not_found.append(film)
-            continue
-        else:
-            if len(found_films) < 1:
-                log.info(f'{film} не найден (len < 1)')
-                film_not_found.append(film)
-                continue
-            id = str(found_films[0].id)
-            log.info(f'Найден фильм: {found_films[0]}, kinopoisk id: {id}')
-            film_codes.append(id)
-    result = []
-    result.append(film_codes)
-    result.append(film_not_found)
-    return result
-
-
-def find_kp_id_2(film_list, api):
+def find_kp_id(film_list, api):
     film_codes = []
     film_not_found = []
     for film in film_list:
@@ -303,20 +281,22 @@ if __name__ == "__main__":
     from config import KINOPOISK_API_TOKEN
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format.")
-    args = parser.parse_args(['--file', 'films.txt'])
-    # args = parser.parse_args()
+    # args = parser.parse_args(['--file', 'films.txt'])
+    # args = parser.parse_args(['--file', 'list_111.txt'])
+    args = parser.parse_args()
     if args.file:
         list = file_to_list((args.file[0]))
-        print("Запрос: ", *list)
+        print("Запрос: ", ", ".join(list))
         file_path = get_resource_path('template.docx')
         doc = Document(file_path)
-        kp_codes = find_kp_id_2(list, KINOPOISK_API_TOKEN)
+        kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
+        print("Не найдено:", ", ".join(kp_codes[1]))
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
         write_all_films_to_docx(doc, full_list, './test/list.docx')
 
     else:
         file_path = get_resource_path('template.docx')
         doc = Document(file_path)
-        kp_codes = find_kp_id_2(['Спутник (2019)'], KINOPOISK_API_TOKEN)
+        kp_codes = find_kp_id(['Тихое место 2'], KINOPOISK_API_TOKEN)
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
         write_all_films_to_docx(doc, full_list, './test/list.docx')

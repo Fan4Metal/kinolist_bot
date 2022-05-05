@@ -53,7 +53,7 @@ async def reply(message: types.Message):
     film_list = list(filter(None, film_list))
     log.info("Запрос: " + ", ".join(film_list))
 
-    kp_id = find_kp_id_2(film_list, KINOPOISK_API_TOKEN)
+    kp_id = find_kp_id(film_list, KINOPOISK_API_TOKEN)
     film_codes = kp_id[0]
     film_not_found = kp_id[1]
 
