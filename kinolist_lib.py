@@ -1,11 +1,11 @@
+import argparse
 import io
+import logging
 import os
 import re
 import sys
-import logging
-import argparse
-from copy import deepcopy
 import time
+from copy import deepcopy
 
 import requests
 from docx import Document
@@ -151,7 +151,8 @@ def get_full_film_list(film_codes:list, api:str):
         list: Список с полной информацией о фильмах для записи в таблицу.
     """
     full_films_list = []
-    for film_code in track(film_codes, description="Загрузка информации..."):
+    for film_code in track(film_codes, description="Загрузка информации...", 
+                           complete_style="red", finished_style="green"):
         try:
             film_info = get_film_info(film_code, api)
             full_films_list.append(film_info)
@@ -256,7 +257,8 @@ def write_all_films_to_docx(document, films:list, path:str):
     table_num = len(films)
     if table_num > 1:
         clone_first_table(document, table_num - 1)
-    for i in track(range(table_num), description="Запись в таблицу...   "):
+    for i in track(range(table_num), description="Запись в таблицу...   ",
+                   complete_style="red", finished_style="green"):
         current_table = document.tables[i]
         write_film_to_table(current_table, films[i])
     try:
@@ -269,20 +271,18 @@ def write_all_films_to_docx(document, films:list, path:str):
 
 def file_to_list(file:str):
     if os.path.isfile(file):
-        with open(file, 'rb') as f:
-            list = [x.decode("UTF-8").rstrip() for x in f]
+        with open(file, 'r', encoding="utf-8") as f:
+            list = [x.rstrip() for x in f]
         return list
     else:
         print(f'Файл {file} не найден.')
-        return
+        raise FileNotFoundError
 
 
 if __name__ == "__main__":
     from config import KINOPOISK_API_TOKEN
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format.")
-    # args = parser.parse_args(['--file', 'films.txt'])
-    # args = parser.parse_args(['--file', 'list_111.txt'])
     args = parser.parse_args()
     if args.file:
         list = file_to_list((args.file[0]))
@@ -295,8 +295,9 @@ if __name__ == "__main__":
         write_all_films_to_docx(doc, full_list, './test/list.docx')
 
     else:
-        file_path = get_resource_path('template.docx')
-        doc = Document(file_path)
-        kp_codes = find_kp_id(['Тихое место 2'], KINOPOISK_API_TOKEN)
+        film = ['матрица']
+        kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
+        # file_path = get_resource_path('template.docx')
+        # doc = Document(file_path)
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-        write_all_films_to_docx(doc, full_list, './test/list.docx')
+        # write_all_films_to_docx(doc, full_list, './test/list.docx')

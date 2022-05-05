@@ -1,5 +1,6 @@
 import logging
 import shutil
+import os
 
 from aiogram import Bot, Dispatcher, executor, types
 from docx2pdf import convert
@@ -59,7 +60,7 @@ async def reply(message: types.Message):
 
     if len(film_not_found) > 0:
         log.info(f'Не найдено: {", ".join(film_not_found)}')
-    if len(film_codes) < 1:
+    if len(film_codes) == 0:
         await message.reply("Ой, ничего не найдено!")
         return
 
