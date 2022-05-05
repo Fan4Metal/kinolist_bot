@@ -108,7 +108,7 @@ def get_film_info(film_code, api):
     # с помощью регулярного выражения находим значение стран в кавычках ''
     countries = re.findall("'([^']*)'", str(response_film.film.countries))
     # имя файла
-    if response_film.film.name_ru != None:
+    if response_film.film.name_ru is not None:
         file_name = response_film.film.name_ru
         film_name = response_film.film.name_ru
     else:
@@ -140,7 +140,7 @@ def get_film_info(film_code, api):
     return result
 
 
-def get_full_film_list(film_codes:list, api:str):
+def get_full_film_list(film_codes: list, api: str):
     """Загружает информацию о фильмах
 
     Args:
@@ -151,7 +151,7 @@ def get_full_film_list(film_codes:list, api:str):
         list: Список с полной информацией о фильмах для записи в таблицу.
     """
     full_films_list = []
-    for film_code in track(film_codes, description="Загрузка информации...", 
+    for film_code in track(film_codes, description="Загрузка информации...",
                            complete_style="white", finished_style="green"):
         try:
             film_info = get_film_info(film_code, api)
@@ -190,7 +190,7 @@ def find_kp_id(film_list, api):
                     log.info(f'Найден фильм: {found_film} ({year}), kinopoisk id: {id}')
                     film_codes.append(id)
             else:
-                log.warning(f'Ошибка доступа к https://kinopoiskapiunofficial.tech')
+                log.warning('Ошибка доступа к https://kinopoiskapiunofficial.tech')
                 return
         except Exception as e:
             log.warning("Exeption:", str(e))
@@ -203,7 +203,7 @@ def find_kp_id(film_list, api):
     return result
 
 
-def write_film_to_table(current_table, filminfo:list):
+def write_film_to_table(current_table, filminfo: list):
     '''Заполнение таблицы в файле docx.'''
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
     run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
@@ -253,7 +253,7 @@ def write_film_to_table(current_table, filminfo:list):
     run.add_picture(image2file(filminfo[18]), width=Cm(7))
 
 
-def write_all_films_to_docx(document, films:list, path:str):
+def write_all_films_to_docx(document, films: list, path: str):
     table_num = len(films)
     if table_num > 1:
         clone_first_table(document, table_num - 1)
@@ -269,7 +269,7 @@ def write_all_films_to_docx(document, films:list, path:str):
         raise Exception
 
 
-def file_to_list(file:str):
+def file_to_list(file: str):
     if os.path.isfile(file):
         with open(file, 'r', encoding="utf-8") as f:
             list = [x.rstrip() for x in f]
@@ -282,7 +282,9 @@ def file_to_list(file:str):
 if __name__ == "__main__":
     from config import KINOPOISK_API_TOKEN
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format.")
+    parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
+    parser.add_argument("-m", "--movie", nargs="+", help="list of films.")
+    parser.add_argument("-o", "--output", nargs=1, help="output file name")
     args = parser.parse_args()
     if args.file:
         list = file_to_list((args.file[0]))
@@ -292,12 +294,20 @@ if __name__ == "__main__":
         kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
         print("Не найдено:", ", ".join(kp_codes[1]))
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-        write_all_films_to_docx(doc, full_list, './result/list.docx')
+        if args.output:
+            output = args.output[0]
+            write_all_films_to_docx(doc, full_list, output)
+        else:
+            write_all_films_to_docx(doc, full_list, 'list.docx')
 
     else:
-        film = ['матрица', 'matrix 2', 'matrix 3']
+        film = args.movie
         kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
-        # file_path = get_resource_path('template.docx')
-        # doc = Document(file_path)
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-        # write_all_films_to_docx(doc, full_list, './result/list.docx')
+        file_path = get_resource_path('template.docx')
+        doc = Document(file_path)
+        if args.output:
+            output = args.output[0]
+            write_all_films_to_docx(doc, full_list, output)
+        else:
+            write_all_films_to_docx(doc, full_list, 'list.docx')
