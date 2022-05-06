@@ -7,13 +7,16 @@ from docx2pdf import convert
 from kinolist_lib import *
 import config
 
-VER = '0.2.2'
+VER = '0.2.3'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger("Kinolist_Bot")
+logging.basicConfig(level=logging.INFO,
+                    format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
+                    datefmt='%d.%m.%Y %H:%M:%S')
+log = logging.getLogger("Bot")
+
 
 # Initialize bot and dispatcher
 bot = Bot(token=TELEGRAM_API_TOKEN)
@@ -89,14 +92,14 @@ async def reply(message: types.Message):
 
     path_pdf = chat_id + "/list.pdf"
     convert(path_docx, path_pdf)
-
+    log.info(f'Файл "{path_pdf}" создан.')
     with open(path_pdf, 'rb') as pdf:
         if len(film_not_found) > 0:
             text = "Список готов!\n" + "Правда, вот эти фильмы не смог найти:\n" + "\n".join(film_not_found)
             await message.reply_document(pdf, caption=text)
         else:
             await message.reply_document(pdf, caption='Список готов!')
-
+    log.info(f'Список отправлен в чат: {chat_id}')
     shutil.rmtree(chat_id)
     return
 

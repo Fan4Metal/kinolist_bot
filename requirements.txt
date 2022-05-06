@@ -5,4 +5,4 @@ kinopoiskpy
 requests
 Pillow
 docx2pdf
-rich
+tqdm

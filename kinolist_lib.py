@@ -14,11 +14,13 @@ from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.film_request import FilmRequest
 from kinopoisk_unofficial.request.staff.staff_request import StaffRequest
 from PIL import Image
-from rich.progress import track
+from tqdm import tqdm
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger("Kinolist_Lib")
+logging.basicConfig(level=logging.INFO,
+                    format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
+                    datefmt='%d.%m.%Y %H:%M:%S')
+log = logging.getLogger("Lib")
 
 
 def is_api_ok(api):
@@ -151,8 +153,7 @@ def get_full_film_list(film_codes: list, api: str):
         list: Список с полной информацией о фильмах для записи в таблицу.
     """
     full_films_list = []
-    for film_code in track(film_codes, description="Загрузка информации...", 
-                           complete_style = "white", finished_style = "green"):
+    for film_code in tqdm(film_codes, desc="Загрузка информации...   "):
         try:
             film_info = get_film_info(film_code, api)
             full_films_list.append(film_info)
@@ -257,13 +258,12 @@ def write_all_films_to_docx(document, films: list, path: str):
     table_num = len(films)
     if table_num > 1:
         clone_first_table(document, table_num - 1)
-    for i in track(range(table_num), description="Запись в таблицу...   ",
-                    complete_style="white", finished_style="green"):
+    for i in tqdm(range(table_num), desc="Запись в таблицу...      "):
         current_table = document.tables[i]
         write_film_to_table(current_table, films[i])
     try:
         document.save(path)
-        log.info(f'Файл "{path}" записан.')
+        log.info(f'Файл "{path}" создан.')
     except PermissionError:
         log.warning(f"Ошибка! Нет доступа к файлу {path}. Список не сохранен.")
         raise Exception
