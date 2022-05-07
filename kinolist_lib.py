@@ -6,6 +6,7 @@ import re
 import sys
 import time
 from copy import deepcopy
+from pathlib import Path
 
 import requests
 from docx import Document
@@ -279,36 +280,46 @@ def file_to_list(file: str):
         raise FileNotFoundError
 
 
-if __name__ == "__main__":
+def main():
     from config import KINOPOISK_API_TOKEN
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
     parser.add_argument("-m", "--movie", nargs="+", help="list of films.")
-    parser.add_argument("-o", "--output", nargs=1, help="output file name")
+    parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
     args = parser.parse_args()
+
+    if args.output:
+        output = args.output[0]
+        output_dir, output_file_name = os.path.split(output)
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        _, ext = os.path.splitext(output_file_name)
+        if ext != ".docx":
+            print("Output file must have .docx extension")
+            return
+    else:
+        output = "list.docx"
+
     if args.file:
         list = file_to_list((args.file[0]))
-        print("Запрос: ", ", ".join(list))
+        print(f"Запрос из {args.file[0]}: ", ", ".join(list))
         file_path = get_resource_path('template.docx')
         doc = Document(file_path)
         kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
-        print("Не найдено:", ", ".join(kp_codes[1]))
+        if len(kp_codes[1]) != 0:
+            print("Не найдено:", ", ".join(kp_codes[1]))
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-        if args.output:
-            output = args.output[0]
-            write_all_films_to_docx(doc, full_list, output)
-        else:
-            write_all_films_to_docx(doc, full_list, 'list.docx')
+        write_all_films_to_docx(doc, full_list, output)
 
-    else:
-        if args.movie:
+    elif args.movie:
             film = args.movie
             kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
+            if len(kp_codes[1]) != 0:
+                print("Не найдено:", ", ".join(kp_codes[1]))
             full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
             file_path = get_resource_path('template.docx')
             doc = Document(file_path)
-            if args.output:
-                output = args.output[0]
-                write_all_films_to_docx(doc, full_list, output)
-            else:
-                write_all_films_to_docx(doc, full_list, 'list.docx')
+            write_all_films_to_docx(doc, full_list, output)
+
+
+if __name__ == "__main__":
+    main()
