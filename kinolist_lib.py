@@ -36,7 +36,7 @@ def is_api_ok(api):
         return True
 
 
-def image2file(image):
+def image_to_file(image):
     """Return `image` as PNG file-like object."""
     image_file = io.BytesIO()
     image.save(image_file, format="PNG")
@@ -72,6 +72,47 @@ def clone_first_table(document: Document, num):
         paragraph = document.add_paragraph()
 
 
+def find_kp_id(film_list, api):
+    film_codes = []
+    film_not_found = []
+    for film in film_list:
+        time.sleep(0.2)
+        payload = {'keyword': film, 'page': 1}
+        headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
+        try:
+            r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
+                             headers=headers,
+                             params=payload)
+            if r.status_code == 200:
+                resp_json = r.json()
+                # print(resp_json)
+                if resp_json['searchFilmsCountResult'] == 0:
+                    log.info(f'{film} не найден')
+                    film_not_found.append(film)
+                    continue
+                else:
+                    id = resp_json['films'][0]['filmId']
+                    year = resp_json['films'][0]['year']
+                    if 'nameRu' in resp_json['films'][0]:
+                        found_film = resp_json['films'][0]['nameRu']
+                    else:
+                        found_film = resp_json['films'][0]['nameEn']
+                    log.info(f'Найден фильм: {found_film} ({year}), kinopoisk id: {id}')
+                    film_codes.append(id)
+            else:
+                log.warning('Ошибка доступа к https://kinopoiskapiunofficial.tech')
+                return
+        except Exception as e:
+            log.warning("Exeption:", str(e))
+            log.info(f'{film} не найден (exeption)')
+            film_not_found.append(film)
+            continue
+    result = []
+    result.append(film_codes)
+    result.append(film_not_found)
+    return result
+
+
 def get_film_info(film_code, api):
     '''
     Получение информации о фильме с помощью kinopoisk_api_client.
@@ -91,21 +132,21 @@ def get_film_info(film_code, api):
     api_client = KinopoiskApiClient(api)
     request_staff = StaffRequest(film_code)
     response_staff = api_client.staff.send_staff_request(request_staff)
-    stafflist = []
+    staff_list = []
     if len(response_staff.items) >= 11:
         for i in range(0, 11):  # загружаем 11 персоналий (режиссер + 10 актеров)
             if response_staff.items[i].name_ru == '':
-                stafflist.append(response_staff.items[i].name_en)
+                staff_list.append(response_staff.items[i].name_en)
             else:
-                stafflist.append(response_staff.items[i].name_ru)
+                staff_list.append(response_staff.items[i].name_ru)
     else:
         for i in range(0, len(response_staff.items)):
             if response_staff.items[i].name_ru == '':
-                stafflist.append(response_staff.items[i].name_en)
+                staff_list.append(response_staff.items[i].name_en)
             else:
-                stafflist.append(response_staff.items[i].name_ru)
+                staff_list.append(response_staff.items[i].name_ru)
         for i in range(11 - len(response_staff.items)):
-            stafflist.append("")
+            staff_list.append("")
     request_film = FilmRequest(film_code)
     response_film = api_client.films.send_film_request(request_film)
     # с помощью регулярного выражения находим значение стран в кавычках ''
@@ -120,11 +161,11 @@ def get_film_info(film_code, api):
     # очистка имени файла от запрещенных символов
     trtable = file_name.maketrans('', '', '\/:*?"<>')
     file_name = file_name.translate(trtable)
-    filmlist = [
+    film_list = [
         film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries,
         response_film.film.description, response_film.film.poster_url, file_name
     ]
-    result = filmlist + stafflist
+    result = film_list + staff_list
     # загрузка постера
     cover_url = response_film.film.poster_url
     cover = requests.get(cover_url, stream=True)
@@ -164,45 +205,6 @@ def get_full_film_list(film_codes: list, api: str):
         else:
             continue
     return full_films_list
-
-
-def find_kp_id(film_list, api):
-    film_codes = []
-    film_not_found = []
-    for film in film_list:
-        time.sleep(0.2)
-        payload = {'keyword': film, 'page': 1}
-        headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
-        try:
-            r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
-            if r.status_code == 200:
-                resp_json = r.json()
-                # print(resp_json)
-                if resp_json['searchFilmsCountResult'] == 0:
-                    log.info(f'{film} не найден')
-                    film_not_found.append(film)
-                    continue
-                else:
-                    id = resp_json['films'][0]['filmId']
-                    year = resp_json['films'][0]['year']
-                    if 'nameRu' in resp_json['films'][0]:
-                        found_film = resp_json['films'][0]['nameRu']
-                    else:
-                        found_film = resp_json['films'][0]['nameEn']
-                    log.info(f'Найден фильм: {found_film} ({year}), kinopoisk id: {id}')
-                    film_codes.append(id)
-            else:
-                log.warning('Ошибка доступа к https://kinopoiskapiunofficial.tech')
-                return
-        except Exception as e:
-            log.warning("Exeption:", str(e))
-            log.info(f'{film} не найден (exeption)')
-            film_not_found.append(film)
-            continue
-    result = []
-    result.append(film_codes)
-    result.append(film_not_found)
-    return result
 
 
 def write_film_to_table(current_table, filminfo: list):
@@ -252,7 +254,7 @@ def write_film_to_table(current_table, filminfo: list):
     # запись постера в таблицу
     paragraph = current_table.cell(0, 0).paragraphs[1]
     run = paragraph.add_run()
-    run.add_picture(image2file(filminfo[18]), width=Cm(7))
+    run.add_picture(image_to_file(filminfo[18]), width=Cm(7))
 
 
 def write_all_films_to_docx(document, films: list, path: str):
@@ -284,7 +286,7 @@ def main():
     from config import KINOPOISK_API_TOKEN
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
-    parser.add_argument("-m", "--movie", nargs="+", help="list of films.")
+    parser.add_argument("-m", "--movie", nargs="+", help="list of films")
     parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
     args = parser.parse_args()
 
@@ -294,7 +296,7 @@ def main():
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         _, ext = os.path.splitext(output_file_name)
         if ext != ".docx":
-            print("Output file must have .docx extension")
+            print("Output file must have .docx extension.")
             return
     else:
         output = "list.docx"
@@ -311,14 +313,14 @@ def main():
         write_all_films_to_docx(doc, full_list, output)
 
     elif args.movie:
-            film = args.movie
-            kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
-            if len(kp_codes[1]) != 0:
-                print("Не найдено:", ", ".join(kp_codes[1]))
-            full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-            file_path = get_resource_path('template.docx')
-            doc = Document(file_path)
-            write_all_films_to_docx(doc, full_list, output)
+        film = args.movie
+        kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
+        if len(kp_codes[1]) != 0:
+            print("Не найдено:", ", ".join(kp_codes[1]))
+        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
+        file_path = get_resource_path('template.docx')
+        doc = Document(file_path)
+        write_all_films_to_docx(doc, full_list, output)
 
 
 if __name__ == "__main__":
