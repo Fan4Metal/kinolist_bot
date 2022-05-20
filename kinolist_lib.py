@@ -4,10 +4,10 @@ import logging
 import os
 import re
 import sys
+import textwrap
 import time
 from copy import deepcopy
 from pathlib import Path
-import textwrap
 
 import requests
 from docx import Document
@@ -175,7 +175,6 @@ def get_film_info(film_code, api, shorten=False):
         response_film.film.year,
         response_film.film.rating_kinopoisk,
         countries,
-        # response_film.film.description,
         description,
         response_film.film.poster_url,
         file_name
@@ -225,7 +224,10 @@ def get_full_film_list(film_codes: list, api: str, shorten=False):
 def write_film_to_table(current_table, filminfo: list):
     '''Заполнение таблицы в файле docx.'''
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
-    run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
+    if filminfo[2] == None:
+        run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'нет рейтинга')
+    else:
+        run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
     run.font.name = 'Arial'
     run.font.size = Pt(11)
     run.font.bold = True
@@ -299,11 +301,11 @@ def file_to_list(file: str):
 
 def main():
     from config import KINOPOISK_API_TOKEN
-    parser = argparse.ArgumentParser(prog='Kinolist Library')
+    parser = argparse.ArgumentParser(prog='Kinolist_Lib',description='Tool to create movie lists in docx format.')
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
     parser.add_argument("-m", "--movie", nargs="+", help="list of films")
     parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
-    parser.add_argument("-s", "--shorten", action='store_true', help="optionally shorten movie descriptions")
+    parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
     args = parser.parse_args()
 
     if args.output:

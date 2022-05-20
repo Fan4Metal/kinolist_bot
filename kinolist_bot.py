@@ -44,7 +44,7 @@ async def reply(message: types.Message):
         log.warning("API error.")
         await message.reply("Ой, что-то сломалось!((\n(API error)")
         return
-    
+
     chat_id = str(message.chat.id)
     log.info(f"Начало создания списка для chat_id: {chat_id}")
     if os.path.isdir(chat_id):
