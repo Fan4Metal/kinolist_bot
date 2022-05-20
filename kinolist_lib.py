@@ -7,6 +7,7 @@ import sys
 import time
 from copy import deepcopy
 from pathlib import Path
+import textwrap
 
 import requests
 from docx import Document
@@ -85,7 +86,6 @@ def find_kp_id(film_list, api):
                              params=payload)
             if r.status_code == 200:
                 resp_json = r.json()
-                # print(resp_json)
                 if resp_json['searchFilmsCountResult'] == 0:
                     log.info(f'{film} не найден')
                     film_not_found.append(film)
@@ -113,7 +113,7 @@ def find_kp_id(film_list, api):
     return result
 
 
-def get_film_info(film_code, api):
+def get_film_info(film_code, api, shorten=False):
     '''
     Получение информации о фильме с помощью kinopoisk_api_client.
 
@@ -161,9 +161,24 @@ def get_film_info(film_code, api):
     # очистка имени файла от запрещенных символов
     trtable = file_name.maketrans('', '', '\/:*?"<>')
     file_name = file_name.translate(trtable)
+
+    # Сокращение описания фильма
+    if shorten:
+        description = response_film.film.description.replace("\n\n", " ")
+        description = textwrap.shorten(description, 665, fix_sentence_endings=True,
+                                       break_long_words=False, placeholder='...')
+    else:
+        description = response_film.film.description
+
     film_list = [
-        film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries,
-        response_film.film.description, response_film.film.poster_url, file_name
+        film_name,
+        response_film.film.year,
+        response_film.film.rating_kinopoisk,
+        countries,
+        # response_film.film.description,
+        description,
+        response_film.film.poster_url,
+        file_name
     ]
     result = film_list + staff_list
     # загрузка постера
@@ -184,20 +199,20 @@ def get_film_info(film_code, api):
     return result
 
 
-def get_full_film_list(film_codes: list, api: str):
+def get_full_film_list(film_codes: list, api: str, shorten=False):
     """Загружает информацию о фильмах
 
     Args:
         film_codes (list): Список kinopoisk_id фильмов
         api (str): Kinopoisk API token
-
+        shorten (boolean): Option to shorten movie descriptions
     Returns:
         list: Список с полной информацией о фильмах для записи в таблицу.
     """
     full_films_list = []
     for film_code in tqdm(film_codes, desc="Загрузка информации...   "):
         try:
-            film_info = get_film_info(film_code, api)
+            film_info = get_film_info(film_code, api, shorten)
             full_films_list.append(film_info)
         except Exception as e:
             print("Exeption:", str(e))
@@ -284,10 +299,11 @@ def file_to_list(file: str):
 
 def main():
     from config import KINOPOISK_API_TOKEN
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog='Kinolist Library')
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
     parser.add_argument("-m", "--movie", nargs="+", help="list of films")
     parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
+    parser.add_argument("-s", "--shorten", action='store_true', help="optionally shorten movie descriptions")
     args = parser.parse_args()
 
     if args.output:
@@ -309,7 +325,7 @@ def main():
         kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
         if len(kp_codes[1]) != 0:
             print("Не найдено:", ", ".join(kp_codes[1]))
-        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
+        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN, args.shorten)
         write_all_films_to_docx(doc, full_list, output)
 
     elif args.movie:
@@ -317,9 +333,9 @@ def main():
         kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
         if len(kp_codes[1]) != 0:
             print("Не найдено:", ", ".join(kp_codes[1]))
-        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN)
-        file_path = get_resource_path('template.docx')
-        doc = Document(file_path)
+        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN, args.shorten)
+        template_path = get_resource_path('template.docx')
+        doc = Document(template_path)
         write_all_films_to_docx(doc, full_list, output)
 
 
