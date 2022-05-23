@@ -6,3 +6,4 @@ requests
 Pillow
 docx2pdf
 tqdm
+mutagen
