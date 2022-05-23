@@ -76,6 +76,17 @@ def clone_first_table(document: Document, num):
 
 
 def find_kp_id(film_list, api):
+    """Gets list of kinopoisk ids for list of films
+
+    Args:
+        film_list (list): List of movie titles for search
+        api (string): Kinopoisk API token
+
+    Returns:
+        list: List of two elements:
+                 0. list of found kinopoisk ids
+                 1. list of items that have not been found
+    """
     film_codes = []
     film_not_found = []
     for film in film_list:
@@ -223,7 +234,12 @@ def get_full_film_list(film_codes: list, api: str, shorten=False):
 
 
 def write_film_to_table(current_table, filminfo: list):
-    '''Заполнение таблицы в файле docx.'''
+    """Заполнение таблицы в файле docx.
+
+    Args:
+        current_table (|Document| object loaded from *docx*): указатель на текущую таблицу  
+        filminfo (list): информация о фильме
+    """
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
     if filminfo[2] == None:
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'нет рейтинга')
@@ -276,6 +292,14 @@ def write_film_to_table(current_table, filminfo: list):
 
 
 def write_all_films_to_docx(document, films: list, path: str):
+    """Записывает информацию о фильмах в таблицы файла docx
+
+    Args:
+        document (_type_): Объект файла docx
+        films (list): Список с информацией о фильмах
+        path (str): Путь и имя для сохранения нового файла docx 
+
+    """
     table_num = len(films)
     if table_num > 1:
         clone_first_table(document, table_num - 1)
@@ -291,6 +315,17 @@ def write_all_films_to_docx(document, films: list, path: str):
 
 
 def file_to_list(file: str):
+    """Читает текстовый файл и возвращает список строк
+
+    Args:
+        file (str): Текстовый файл
+
+    Raises:
+        FileNotFoundError: файл не найден
+
+    Returns:
+        list: список строк из файла
+    """
     if os.path.isfile(file):
         with open(file, 'r', encoding="utf-8") as f:
             list = [x.rstrip() for x in f]
@@ -300,8 +335,13 @@ def file_to_list(file: str):
         raise FileNotFoundError
 
 
-def write_tags_to_mp4(film, file_path):
-    '''Запись тегов в файл mp4.'''
+def write_tags_to_mp4(film: list, file_path: str):
+    """Запись тегов в файл mp4.
+
+    Args:
+        film (list): Информация о фильме
+        file_path (str): Путь к файлу mp4
+    """
     video = MP4(file_path)
     video.delete()  # удаление всех тегов
     video["\xa9nam"] = film[0]  # title
@@ -319,7 +359,7 @@ def main():
     parser.add_argument("-m", "--movie", nargs="+", help="list of films")
     parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
     parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
-    parser.add_argument("-t", "--tag", nargs=1, help="write tags to mp4 file (or all mp4 files in folder)")
+    parser.add_argument("-t", "--tag", nargs=1, help="write tags to mp4 file (or to all mp4 files in folder)")
     args = parser.parse_args()
 
     if args.output:
@@ -390,6 +430,8 @@ def main():
             for index, film in enumerate(full_films_list):
                 write_tags_to_mp4(film, mp4_files_valid[index])
                 log.info(f"Записан тег в файл: {mp4_files_valid[index]}")
+        else:
+            log.error("Неверно указан путь.")
 
 
 if __name__ == "__main__":
