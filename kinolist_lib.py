@@ -16,9 +16,11 @@ from docx.shared import Cm, Pt, RGBColor
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.film_request import FilmRequest
 from kinopoisk_unofficial.request.staff.staff_request import StaffRequest
-from PIL import Image
 from mutagen.mp4 import MP4, MP4Cover
+from PIL import Image
 from tqdm import tqdm
+
+LIB_VER = "0.2.5"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -202,7 +204,8 @@ def get_film_info(film_code, api, shorten=False):
         width, height = image.size
         # обрезка до соотношения сторон 1x1.5
         if width > (height / 1.5):
-            image = image.crop((((width - height / 1.5) / 2), 0, ((width - height / 1.5) / 2) + height / 1.5, height))
+            image = image.crop((((width - height / 1.5) / 2), 0,
+                                ((width - height / 1.5) / 2) + height / 1.5, height))
         image.thumbnail((360, 540))
         rgb_image = image.convert('RGB')  # Fix "OSError: cannot write mode RGBA as JPEG"
         result.append(rgb_image)
@@ -354,7 +357,17 @@ def write_tags_to_mp4(film: list, file_path: str):
 
 def main():
     from config import KINOPOISK_API_TOKEN
-    parser = argparse.ArgumentParser(prog='Kinolist_Lib',description='Tool to create movie lists in docx format.')
+    parser = argparse.ArgumentParser(prog='Kinolist_Lib',
+                                     description='Tool to create movie lists in docx format.',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog=textwrap.dedent("""\
+                                     examples:
+                                        Kinolist_Lib -m \"Terminator\" \"Terminator 2\"
+                                        Kinolist_Lib -f movies.txt -o movies.docx
+                                        Kinolist_Lib -t ./Terminator.mp4
+                                        Kinolist_Lib -t c:\movies\Terminator.mp4
+                                        Kinolist_Lib -t ./"""))
+    parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}")
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
     parser.add_argument("-m", "--movie", nargs="+", help="list of films")
     parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
