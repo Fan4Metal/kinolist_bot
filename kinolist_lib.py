@@ -20,7 +20,7 @@ from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from tqdm import tqdm
 
-LIB_VER = "0.2.5"
+LIB_VER = "0.2.6"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -423,6 +423,7 @@ def main():
             log.info(f"Записан тег в файл: {mp4_file}")
 
         elif os.path.isdir(path):
+            log.info(f"Поиск файлов mp4 в каталоге: {path}")
             mp4_files = glob.glob(path + '*.mp4')
             if len(mp4_files) < 1:
                 log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
@@ -430,10 +431,14 @@ def main():
             mp4_files_names = []
             for name in mp4_files:
                 mp4_files_names.append(os.path.split(name)[1])
-            print(f"Найдены файлы ({len(mp4_files_names)}):", ", ".join(mp4_files_names))
+            for file in mp4_files_names:
+                log.info(f"Найден файл:  {file}")
+            log.info(f"Всего найдено: {len(mp4_files)}")
+
             film_list = []
             for file in mp4_files:
                 film_list.append(os.path.splitext(os.path.split(file)[1])[0])
+            log.info("Поиск фильмов на kinopoisk.ru...")
             kp_id = find_kp_id(film_list, KINOPOISK_API_TOKEN)
             mp4_files_valid = []
             for index in range(len(mp4_files)):
