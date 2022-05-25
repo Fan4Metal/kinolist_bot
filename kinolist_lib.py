@@ -77,6 +77,12 @@ def clone_first_table(document: Document, num):
         paragraph = document.add_paragraph()
 
 
+def find_kp_id_in_title(title: str):
+    id = re.search(r"KP~(\d+)", title) 
+    if id:
+        return id.group(1)
+
+
 def find_kp_id(film_list, api):
     """Gets list of kinopoisk ids for list of films
 
@@ -92,6 +98,17 @@ def find_kp_id(film_list, api):
     film_codes = []
     film_not_found = []
     for film in film_list:
+
+        code_in_name = find_kp_id_in_title(film)
+        if code_in_name:
+            try:
+                film_info = get_film_info(code_in_name, api)
+                log.info(f'Найден фильм: {film_info[0]} ({film_info[1]}), kinopoisk id: {code_in_name}')
+                film_codes.append(code_in_name)
+                continue
+            except Exception:
+                film_not_found.append(code_in_name)
+                continue
         time.sleep(0.2)
         payload = {'keyword': film, 'page': 1}
         headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
@@ -230,7 +247,7 @@ def get_full_film_list(film_codes: list, api: str, shorten=False):
             film_info = get_film_info(film_code, api, shorten)
             full_films_list.append(film_info)
         except Exception as e:
-            print("Exeption:", str(e))
+            log.warning("Exeption:", str(e))
         else:
             continue
     return full_films_list
@@ -388,12 +405,13 @@ def main():
 
     if args.file:
         list = file_to_list((args.file[0]))
-        print(f"Запрос из {args.file[0]}: ", ", ".join(list))
+        print(f"Запрос из {args.file[0]} ({len(list)}): ", ", ".join(list))
         file_path = get_resource_path('template.docx')
         doc = Document(file_path)
         kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
         if len(kp_codes[1]) != 0:
-            print("Не найдено:", ", ".join(kp_codes[1]))
+                for code in kp_codes[1]:
+                    log.warning(f"Фильм не найден, kinopoisk id: {code}")
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN, args.shorten)
         write_all_films_to_docx(doc, full_list, output)
 
@@ -401,7 +419,11 @@ def main():
         film = args.movie
         kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
         if len(kp_codes[1]) != 0:
-            print("Не найдено:", ", ".join(kp_codes[1]))
+            for code in kp_codes[1]:
+                log.warning(f"Фильм не найден, kinopoisk id: {code}")
+        if len(kp_codes[0]) == 0:
+            log.warning("Фильмы не найдены.")
+            return
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN, args.shorten)
         template_path = get_resource_path('template.docx')
         doc = Document(template_path)
@@ -432,7 +454,7 @@ def main():
             for name in mp4_files:
                 mp4_files_names.append(os.path.split(name)[1])
             for file in mp4_files_names:
-                log.info(f"Найден файл:  {file}")
+                log.info(f"Найден файл: {file}")
             log.info(f"Всего найдено: {len(mp4_files)}")
 
             film_list = []
