@@ -78,7 +78,7 @@ def clone_first_table(document: Document, num):
 
 
 def find_kp_id_in_title(title: str):
-    id = re.search(r"KP~(\d+)", title) 
+    id = re.search(r"KP~(\d+)", title)
     if id:
         return id.group(1)
 
@@ -197,19 +197,17 @@ def get_film_info(film_code, api, shorten=False):
     # Сокращение описания фильма
     if shorten:
         description = response_film.film.description.replace("\n\n", " ")
-        description = textwrap.shorten(description, 665, fix_sentence_endings=True,
-                                       break_long_words=False, placeholder='...')
+        description = textwrap.shorten(description,
+                                       665,
+                                       fix_sentence_endings=True,
+                                       break_long_words=False,
+                                       placeholder='...')
     else:
         description = response_film.film.description
 
     film_list = [
-        film_name,
-        response_film.film.year,
-        response_film.film.rating_kinopoisk,
-        countries,
-        description,
-        response_film.film.poster_url,
-        file_name
+        film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries, description,
+        response_film.film.poster_url, file_name
     ]
     result = film_list + staff_list
     # загрузка постера
@@ -221,8 +219,7 @@ def get_film_info(film_code, api, shorten=False):
         width, height = image.size
         # обрезка до соотношения сторон 1x1.5
         if width > (height / 1.5):
-            image = image.crop((((width - height / 1.5) / 2), 0,
-                                ((width - height / 1.5) / 2) + height / 1.5, height))
+            image = image.crop((((width - height / 1.5) / 2), 0, ((width - height / 1.5) / 2) + height / 1.5, height))
         image.thumbnail((360, 540))
         rgb_image = image.convert('RGB')  # Fix "OSError: cannot write mode RGBA as JPEG"
         result.append(rgb_image)
@@ -257,7 +254,7 @@ def write_film_to_table(current_table, filminfo: list):
     """Заполнение таблицы в файле docx.
 
     Args:
-        current_table (|Document| object loaded from *docx*): указатель на текущую таблицу  
+        current_table (Document object loaded from *docx*): указатель на текущую таблицу
         filminfo (list): информация о фильме
     """
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
@@ -379,11 +376,14 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=textwrap.dedent("""\
                                      examples:
-                                        Kinolist_Lib -m \"Terminator\" \"Terminator 2\"
+                                        Kinolist_Lib -m \"Terminator\" \"Terminator 2\" KP~319
                                         Kinolist_Lib -f movies.txt -o movies.docx
                                         Kinolist_Lib -t ./Terminator.mp4
                                         Kinolist_Lib -t c:\movies\Terminator.mp4
-                                        Kinolist_Lib -t ./"""))
+                                        Kinolist_Lib -t ./
+
+                                        * Kinopoisk id can be set directly by placing tag KP~XXX in the title
+                                        """))
     parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}")
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
     parser.add_argument("-m", "--movie", nargs="+", help="list of films")
@@ -410,8 +410,8 @@ def main():
         doc = Document(file_path)
         kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
         if len(kp_codes[1]) != 0:
-                for code in kp_codes[1]:
-                    log.warning(f"Фильм не найден, kinopoisk id: {code}")
+            for code in kp_codes[1]:
+                log.warning(f"Фильм не найден, kinopoisk id: {code}")
         full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN, args.shorten)
         write_all_films_to_docx(doc, full_list, output)
 
