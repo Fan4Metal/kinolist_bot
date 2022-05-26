@@ -1,6 +1,7 @@
 import logging
 import shutil
 import os
+import argparse
 
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -13,10 +14,21 @@ VER = '0.3.1'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
+
+parser = argparse.ArgumentParser(prog='Kinolist_Bot',
+                                description='Tool to create movie lists in docx format.')
+parser.add_argument("-l", "--log", action='store_true', help="enable logging to file")
+args = parser.parse_args()
+
 # Configure logging
-logging.basicConfig(level=logging.INFO,
+if args.log:
+    logging.basicConfig(filename='kinolist_bot.log', level=logging.INFO,
                     format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
                     datefmt='%d.%m.%Y %H:%M:%S')
+else:
+    logging.basicConfig(level=logging.INFO,
+                        format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
+                        datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("Bot")
 
 
