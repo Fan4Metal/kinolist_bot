@@ -20,12 +20,8 @@ from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from tqdm import tqdm
 
-LIB_VER = "0.2.6"
+LIB_VER = "0.2.7"
 
-# Configure logging
-# logging.basicConfig(level=logging.INFO,
-#                     format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
-#                     datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("Lib")
 
 
@@ -367,6 +363,14 @@ def write_tags_to_mp4(film: list, file_path: str):
     video["\xa9day"] = str(film[1])  # year
     video["covr"] = [MP4Cover(image_to_file(film[18]).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
     video.save()
+
+
+def docx_to_pdf_libre(file_in):
+    file_in_abs = os.path.abspath(file_in)
+    dir_out_abs = os.path.split(file_in_abs)[0]
+    soffice_path = "\"C:\Program Files\LibreOffice\program\soffice\""
+    command = f"{soffice_path} --headless --convert-to pdf --outdir {dir_out_abs} {file_in_abs}"
+    os.system(command)
 
 
 def main():

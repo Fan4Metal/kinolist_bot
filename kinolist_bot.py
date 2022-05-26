@@ -10,7 +10,7 @@ from docx2pdf import convert
 from kinolist_lib import *
 import config
 
-VER = '0.3.1'
+VER = '0.3.2'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
@@ -49,8 +49,10 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
-    log.info(f"Start (chat_id: {message.chat.id})")
-    # Set state
+    log.info(f"Начало работы (chat_id: {message.chat.id})")
+    if os.path.isdir("./" + str(message.chat.id)):
+        shutil.rmtree("./" + str(message.chat.id))
+    log.info(f"Каталог очищен")
     await DocFormat.pdf.set()
     await message.reply("Привет, я Кinolist Bot!\nОтправьте мне список фильмов, и я пришлю его в формате pdf.")
 
@@ -108,7 +110,7 @@ async def reply(message: types.Message):
         await message.reply("Ни один фильм не найден!")
         return
 
-    template_path = get_resource_path('template.docx')
+    template_path = get_resource_path('template_libre.docx')  # выбор шаблона
     try:
         doc = Document(template_path)
     except Exception:
@@ -128,7 +130,8 @@ async def reply(message: types.Message):
         return
 
     path_pdf = chat_id + "/list.pdf"
-    convert(path_docx, path_pdf)
+    # convert(path_docx, path_pdf)
+    docx_to_pdf_libre(path_docx)
     log.info(f'Файл "{path_pdf}" создан.')
     with open(path_pdf, 'rb') as pdf:
         if len(film_not_found) > 0:
