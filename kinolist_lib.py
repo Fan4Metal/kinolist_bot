@@ -368,9 +368,10 @@ def write_tags_to_mp4(film: list, file_path: str):
 def docx_to_pdf_libre(file_in):
     file_in_abs = os.path.abspath(file_in)
     dir_out_abs = os.path.split(file_in_abs)[0]
-    soffice_path = "\"C:\Program Files\LibreOffice\program\soffice.exe\""
-    command = f"{soffice_path} --headless --convert-to pdf --outdir {dir_out_abs} {file_in_abs}"
-    os.system(command)
+    soffice_path = "C:\Program Files\LibreOffice\program\soffice.exe"
+    command = f'"{soffice_path}" --headless --convert-to pdf --outdir {dir_out_abs} {file_in_abs}'
+    code_exit = os.system(command)
+    return code_exit
 
 
 def main():

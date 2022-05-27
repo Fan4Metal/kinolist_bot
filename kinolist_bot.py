@@ -134,8 +134,13 @@ async def reply(message: types.Message):
         return
     path_pdf = chat_id + "/list.pdf"
     if args.libre:
-        docx_to_pdf_libre(path_docx)
+        log.info("Конвертация docx в pdf через Libre Office")
+        if docx_to_pdf_libre(path_docx) != 0:
+            log.warning("Ошибка конвертации в pdf через Libre Office")
+            await message.reply("Ой, что-то сломалось!((")
+            return
     else:
+        log.info("Конвертация docx в pdf через Microsoft Word")
         convert(path_docx, path_pdf)
     log.info(f'Файл "{path_pdf}" создан.')
     with open(path_pdf, 'rb') as pdf:
