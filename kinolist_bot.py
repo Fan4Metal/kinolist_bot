@@ -17,6 +17,7 @@ KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
 parser = argparse.ArgumentParser(prog='Kinolist_Bot',
                                 description='Tool to create movie lists in docx format.')
+parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {VER}")
 parser.add_argument("-l", "--log", action='store_true', help="enable logging to file")
 parser.add_argument("--libre", action='store_true', help="enable pdf cinversion using Libre Office")
 args = parser.parse_args()
@@ -51,9 +52,9 @@ async def send_welcome(message: types.Message):
     This handler will be called when user sends `/start` or `/help` command
     """
     log.info(f"Начало работы (chat_id: {message.chat.id})")
-    if os.path.isdir("./" + str(message.chat.id)):
+    if os.path.exists("./" + str(message.chat.id)):
         shutil.rmtree("./" + str(message.chat.id))
-    log.info(f"Каталог очищен")
+        log.info(f"Каталог очищен")
     await DocFormat.pdf.set()
     await message.reply("Привет, я Кinolist Bot!\nОтправьте мне список фильмов, и я пришлю его в формате pdf.")
 
@@ -67,7 +68,7 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler(state='*', commands=['pdf'])
 async def send_welcome(message: types.Message):
-    log.info(f"Start request for docx document (chat_id: {message.chat.id})")
+    log.info(f"Start request for pdf document (chat_id: {message.chat.id})")
     await DocFormat.pdf.set()
     await message.reply("Ок, отправьте мне список фильмов, и я пришлю его в формате *pdf*\.", parse_mode="MarkdownV2")
 
