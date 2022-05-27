@@ -18,6 +18,7 @@ KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 parser = argparse.ArgumentParser(prog='Kinolist_Bot',
                                 description='Tool to create movie lists in docx format.')
 parser.add_argument("-l", "--log", action='store_true', help="enable logging to file")
+parser.add_argument("--libre", action='store_true', help="enable pdf cinversion using Libre Office")
 args = parser.parse_args()
 
 # Configure logging
@@ -109,8 +110,10 @@ async def reply(message: types.Message):
     if len(full_films_list) < 1:
         await message.reply("Ни один фильм не найден!")
         return
-
-    template_path = get_resource_path('template_libre.docx')  # выбор шаблона
+    if args.libre:
+        template_path = get_resource_path('template_libre.docx')
+    else:
+        template_path = get_resource_path('template.docx')
     try:
         doc = Document(template_path)
     except Exception:
@@ -128,10 +131,11 @@ async def reply(message: types.Message):
         log.warning('Ошибка при записи файла docx')
         await message.reply("Ой, что-то сломалось!((")
         return
-
     path_pdf = chat_id + "/list.pdf"
-    # convert(path_docx, path_pdf)
-    docx_to_pdf_libre(path_docx)
+    if args.libre:
+        docx_to_pdf_libre(path_docx)
+    else:
+        convert(path_docx, path_pdf)
     log.info(f'Файл "{path_pdf}" создан.')
     with open(path_pdf, 'rb') as pdf:
         if len(film_not_found) > 0:
