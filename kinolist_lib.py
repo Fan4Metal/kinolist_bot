@@ -19,9 +19,13 @@ from kinopoisk_unofficial.request.staff.staff_request import StaffRequest
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from tqdm import tqdm
+import PTN
 
-LIB_VER = "0.2.7"
+LIB_VER = "0.2.8"
 
+logging.basicConfig(level=logging.INFO,
+                    format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
+                    datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("Lib")
 
 
@@ -68,7 +72,7 @@ def clone_first_table(document: Document, num):
     '''Клонирует первую таблицу в документе num раз.'''
     template = document.tables[0]
     paragraph = document.paragraphs[0]
-    for i in range(num):
+    for _i in range(num):
         copy_table_after(template, paragraph)
         paragraph = document.add_paragraph()
 
@@ -374,8 +378,32 @@ def docx_to_pdf_libre(file_in):
     return code_exit
 
 
+def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool=False):
+    file_path = get_resource_path(template)
+    doc = Document(file_path)
+    full_list = get_full_film_list(kp_id_list, api, shorten)
+    write_all_films_to_docx(doc, full_list, output)
+
+
+def rename_torrents(api, path=""):
+    mp4_files = glob.glob(path + '*.mp4')
+    titles = []
+    for file in mp4_files:
+        titles.append(PTN.parse(file)["title"])
+    id_list = find_kp_id(titles, api)
+    mp4_files_valid = []
+    for index in range(len(mp4_files)):
+        if titles[index] not in id_list[1]:
+            mp4_files_valid.append(mp4_files[index])
+    films = get_full_film_list(id_list[0], api)
+    for index, film in enumerate(films):
+        os.rename(mp4_files_valid[index], f"{film[0]}.mp4")
+        log.info(f"{mp4_files_valid[index]} --> {film[0]}.mp4")
+    log.info("Файлы переименованы.")
+
+
 def main():
-    from config import KINOPOISK_API_TOKEN
+    from config import KINOPOISK_API_TOKEN as api
     parser = argparse.ArgumentParser(prog='Kinolist_Lib',
                                      description='Tool to create movie lists in docx format.',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -395,6 +423,7 @@ def main():
     parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
     parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
     parser.add_argument("-t", "--tag", nargs=1, help="write tags to mp4 file (or to all mp4 files in folder)")
+    parser.add_argument("-r", "--rename", action='store_true', help="rename mp4 files in current directory")
     args = parser.parse_args()
 
     if args.output:
@@ -410,29 +439,25 @@ def main():
 
     if args.file:
         list = file_to_list((args.file[0]))
-        print(f"Запрос из {args.file[0]} ({len(list)}): ", ", ".join(list))
-        file_path = get_resource_path('template.docx')
-        doc = Document(file_path)
-        kp_codes = find_kp_id(list, KINOPOISK_API_TOKEN)
+        log.info(f"Запрос из {args.file[0]} ({len(list)}): " + ", ".join(list))
+        kp_codes = find_kp_id(list, api)
         if len(kp_codes[1]) != 0:
             for code in kp_codes[1]:
                 log.warning(f"Фильм не найден, kinopoisk id: {code}")
-        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN, args.shorten)
-        write_all_films_to_docx(doc, full_list, output)
+        template = "template.docx"
+        make_docx(kp_codes[0], output, template, api, args.shorten)
 
     elif args.movie:
         film = args.movie
-        kp_codes = find_kp_id(film, KINOPOISK_API_TOKEN)
+        kp_codes = find_kp_id(film, api)
         if len(kp_codes[1]) != 0:
             for code in kp_codes[1]:
                 log.warning(f"Фильм не найден, kinopoisk id: {code}")
         if len(kp_codes[0]) == 0:
             log.warning("Фильмы не найдены.")
             return
-        full_list = get_full_film_list(kp_codes[0], KINOPOISK_API_TOKEN, args.shorten)
-        template_path = get_resource_path('template.docx')
-        doc = Document(template_path)
-        write_all_films_to_docx(doc, full_list, output)
+        template = "template.docx"
+        make_docx(kp_codes[0], output, template, api, args.shorten)
 
     elif args.tag:
         path = args.tag[0]
@@ -440,12 +465,12 @@ def main():
             _, mp4_file = os.path.split(path)
             name, ext = os.path.splitext(mp4_file)
             if ext != ".mp4":
-                print("Can write tags only to mp4 files.")
+                log.error("Можно записывать теги только в файлы mp4.")
                 return
             name_list = []
             name_list.append(name)
-            kp_id = find_kp_id(name_list, KINOPOISK_API_TOKEN)[0][0]
-            film_info = get_film_info(kp_id, KINOPOISK_API_TOKEN)
+            kp_id = find_kp_id(name_list, api)[0][0]
+            film_info = get_film_info(kp_id, api)
             write_tags_to_mp4(film_info, path)
             log.info(f"Записан тег в файл: {mp4_file}")
 
@@ -466,17 +491,20 @@ def main():
             for file in mp4_files:
                 film_list.append(os.path.splitext(os.path.split(file)[1])[0])
             log.info("Поиск фильмов на kinopoisk.ru...")
-            kp_id = find_kp_id(film_list, KINOPOISK_API_TOKEN)
+            kp_id = find_kp_id(film_list, api)
             mp4_files_valid = []
             for index in range(len(mp4_files)):
                 if film_list[index] not in kp_id[1]:
                     mp4_files_valid.append(mp4_files[index])
-            full_films_list = get_full_film_list(kp_id[0], KINOPOISK_API_TOKEN)
+            full_films_list = get_full_film_list(kp_id[0], api)
             for index, film in enumerate(full_films_list):
                 write_tags_to_mp4(film, mp4_files_valid[index])
                 log.info(f"Записан тег в файл: {mp4_files_valid[index]}")
         else:
             log.error("Неверно указан путь.")
+
+    elif args.rename:
+        rename_torrents(api)
 
 
 if __name__ == "__main__":
