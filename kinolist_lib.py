@@ -386,11 +386,18 @@ def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: b
 
 
 def rename_torrents(api, path=""):
-    mp4_files = glob.glob(path + '*.mp4')
+    mp4_files = glob.glob(os.path.join(path, '*.mp4'))
+    if len(mp4_files) == 0:
+        log.warning("Файлы не найдены.")
+        return
     titles = []
     for file in mp4_files:
         titles.append(PTN.parse(file)["title"])
+    print(titles)
     id_list = find_kp_id(titles, api)
+    if len(id_list[0]) == 0:
+        log.warning("Фильмы не найдены.")
+        return
     mp4_files_valid = []
     for index in range(len(mp4_files)):
         if titles[index] not in id_list[1]:
@@ -413,7 +420,8 @@ def main():
                                         Kinolist_Lib -f movies.txt -o movies.docx
                                         Kinolist_Lib -t ./Terminator.mp4
                                         Kinolist_Lib -t c:\movies\Terminator.mp4
-                                        Kinolist_Lib -t ./
+                                        Kinolist_Lib -t
+                                        Kinolist_Lib -r
 
                                         * Kinopoisk id can be set directly by placing tag KP~XXX in the title
                                         """))
@@ -422,7 +430,7 @@ def main():
     parser.add_argument("-m", "--movie", nargs="+", help="list of films")
     parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
     parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
-    parser.add_argument("-t", "--tag", nargs=1, help="write tags to mp4 file (or to all mp4 files in folder)")
+    parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="write tags to mp4 file (or to all mp4 files in folder)")
     parser.add_argument("-r", "--rename", action='store_true', help="rename mp4 files in current directory")
     args = parser.parse_args()
 
@@ -460,24 +468,28 @@ def main():
         make_docx(kp_codes[0], output, template, api, args.shorten)
 
     elif args.tag:
-        path = args.tag[0]
+        path = args.tag
         if os.path.isfile(path):
-            _, mp4_file = os.path.split(path)
+            mp4_file = os.path.basename(path)
             name, ext = os.path.splitext(mp4_file)
             if ext != ".mp4":
                 log.error("Можно записывать теги только в файлы mp4.")
                 return
             name_list = []
             name_list.append(name)
-            kp_id = find_kp_id(name_list, api)[0][0]
+            kp_ids = find_kp_id(name_list, api)
+            if len(kp_ids[0]) == 0:
+                log.warning("Фильм не найден.")
+                return
+            kp_id = kp_ids[0][0]
             film_info = get_film_info(kp_id, api)
             write_tags_to_mp4(film_info, path)
             log.info(f"Записан тег в файл: {mp4_file}")
 
         elif os.path.isdir(path):
-            log.info(f"Поиск файлов mp4 в каталоге: {path}")
-            mp4_files = glob.glob(path + '*.mp4')
-            if len(mp4_files) < 1:
+            log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
+            mp4_files = glob.glob(os.path.join(path, '*.mp4'))
+            if len(mp4_files) == 0:
                 log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
                 return
             mp4_files_names = []
@@ -489,8 +501,7 @@ def main():
 
             film_list = []
             for file in mp4_files:
-                film_list.append(os.path.splitext(os.path.split(file)[1])[0])
-            log.info("Поиск фильмов на kinopoisk.ru...")
+                film_list.append(os.path.splitext(os.path.basename(file))[0])
             kp_id = find_kp_id(film_list, api)
             mp4_files_valid = []
             for index in range(len(mp4_files)):
