@@ -23,9 +23,6 @@ import PTN
 
 LIB_VER = "0.2.8"
 
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
-                    datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("Lib")
 
 
@@ -432,13 +429,14 @@ def main():
     parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
     parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="write tags to mp4 file (or to all mp4 files in folder)")
     parser.add_argument("-r", "--rename", action='store_true', help="rename mp4 files in current directory")
+    parser.add_argument("-p", "--pdf", nargs="?", const="word", help="convert docx to pdf")
     args = parser.parse_args()
 
     if args.output:
         output = args.output[0]
         output_dir, output_file_name = os.path.split(output)
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        _, ext = os.path.splitext(output_file_name)
+        ext = os.path.splitext(output_file_name)[1]
         if ext != ".docx":
             print("Output file must have .docx extension.")
             return
@@ -447,6 +445,9 @@ def main():
 
     if args.file:
         list = file_to_list((args.file[0]))
+        if len(list) == 0:
+            log.warning("Фильмы не найдены.")
+            return
         log.info(f"Запрос из {args.file[0]} ({len(list)}): " + ", ".join(list))
         kp_codes = find_kp_id(list, api)
         if len(kp_codes[1]) != 0:
