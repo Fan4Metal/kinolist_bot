@@ -21,7 +21,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.9"
+LIB_VER = "0.2.10"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -443,6 +443,7 @@ def main():
     parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
     parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="write tags to mp4 file (or to all mp4 files in folder)")
     parser.add_argument("-r", "--rename", action='store_true', help="rename mp4 files in current directory")
+    parser.add_argument("-l", "--list", nargs="?", const=os.getcwd(), help="make docx list from mp4 files")
     args = parser.parse_args()
 
     if args.output:
@@ -527,6 +528,29 @@ def main():
                 log.info(f"Записан тег в файл: {mp4_files_valid[index]}")
         else:
             log.error("Неверно указан путь.")
+
+    elif args.list:
+        path = args.list
+        log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
+        mp4_files = glob.glob(os.path.join(path, '*.mp4'))
+        if len(mp4_files) == 0:
+            log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
+            return
+        mp4_files_names = []
+        for name in mp4_files:
+            mp4_files_names.append(os.path.split(name)[1])
+        for file in mp4_files_names:
+            log.info(f"Найден файл: {file}")
+        log.info(f"Всего найдено: {len(mp4_files)}")
+
+        film_list = []
+        for file in mp4_files:
+            film_list.append(os.path.splitext(os.path.basename(file))[0])
+        kp_id = find_kp_id(film_list, api)
+        if len (kp_id[1]) > 0:
+            log.warning("Следующие фильмы не найдены: " + ", ".join(kp_id[1]))
+        template = "template.docx"
+        make_docx(kp_id[0], output, template, api, args.shorten)
 
     elif args.rename:
         rename_torrents(api)
