@@ -10,16 +10,16 @@ from docx2pdf import convert
 from kinolist_lib import *
 import config
 
-VER = '0.3.2'
+VER = '0.3.3'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
 
 parser = argparse.ArgumentParser(prog='Kinolist_Bot',
-                                description='Tool to create movie lists in docx format.')
+                                description='Телеграм бот для быстрого создания списков фильмов (@kinolist_one_bot)')
 parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {VER}")
 parser.add_argument("-l", "--log", action='store_true', help="enable logging to file")
-parser.add_argument("--libre", action='store_true', help="enable pdf cinversion using Libre Office")
+parser.add_argument("--libre", action='store_true', help="enable pdf conversion using Libre Office")
 args = parser.parse_args()
 
 # Configure logging
@@ -61,14 +61,14 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler(state='*', commands=['word', 'docx'])
 async def send_welcome(message: types.Message):
-    log.info(f"Start request for docx document (chat_id: {message.chat.id})")
+    log.info(f"Переключение на отправку списков в формате docx (chat_id: {message.chat.id})")
     await DocFormat.docx.set()
     await message.reply("Ок, отправьте мне список фильмов, и я пришлю его в формате *docx*\.", parse_mode="MarkdownV2")
 
 
 @dp.message_handler(state='*', commands=['pdf'])
 async def send_welcome(message: types.Message):
-    log.info(f"Start request for pdf document (chat_id: {message.chat.id})")
+    log.info(f"Переключение на отправку списков в формате pdf (chat_id: {message.chat.id})")
     await DocFormat.pdf.set()
     await message.reply("Ок, отправьте мне список фильмов, и я пришлю его в формате *pdf*\.", parse_mode="MarkdownV2")
 

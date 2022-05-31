@@ -21,7 +21,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.8"
+LIB_VER = "0.2.9"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -443,8 +443,7 @@ def main():
     parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
     parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="write tags to mp4 file (or to all mp4 files in folder)")
     parser.add_argument("-r", "--rename", action='store_true', help="rename mp4 files in current directory")
-    parser.add_argument("-p", "--pdf", nargs="?", const="word", help="convert docx to pdf")
-    args = parser.parse_args(["-m", "Нет (2022)"])
+    args = parser.parse_args()
 
     if args.output:
         output = args.output[0]
