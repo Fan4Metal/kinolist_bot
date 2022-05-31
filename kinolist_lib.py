@@ -75,6 +75,14 @@ def clone_first_table(document: Document, num):
 
 
 def find_kp_id_in_title(title: str):
+    """Находит тег KP~xxx в названии и возвращает xxx (kinopoisk id)
+
+    Args:
+        title (str): Название фильма
+
+    Returns:
+        _type_: Значение xxx (kinopoisk id)
+    """
     id = re.search(r"KP~(\d+)", title)
     if id:
         return id.group(1)
@@ -217,6 +225,8 @@ def get_film_info(film_code, api, shorten=False):
         # обрезка до соотношения сторон 1x1.5
         if width > (height / 1.5):
             image = image.crop((((width - height / 1.5) / 2), 0, ((width - height / 1.5) / 2) + height / 1.5, height))
+        elif height > (1.5 * width):
+            image = image.crop((0, ((height - width * 1.5) / 2), width, ((height + width * 1.5) / 2)))
         image.thumbnail((360, 540))
         rgb_image = image.convert('RGB')  # Fix "OSError: cannot write mode RGBA as JPEG"
         result.append(rgb_image)
@@ -430,7 +440,7 @@ def main():
     parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="write tags to mp4 file (or to all mp4 files in folder)")
     parser.add_argument("-r", "--rename", action='store_true', help="rename mp4 files in current directory")
     parser.add_argument("-p", "--pdf", nargs="?", const="word", help="convert docx to pdf")
-    args = parser.parse_args()
+    args = parser.parse_args(["-m", "Нет (2022)"])
 
     if args.output:
         output = args.output[0]
