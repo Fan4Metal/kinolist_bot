@@ -21,7 +21,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.10"
+LIB_VER = "0.2.11"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -166,42 +166,44 @@ def get_film_info(film_code, api, shorten=False):
                 4 - описание
                 5 - ссылка на постер
                 6 - имя файла без расширения
-                7 - режиссер
-             8:17 - 10 актеров
-               18 - Постер размером 360x540 в формате PIL.Image.Image
+                7 - список режиссеров
+                8 - список актеров
+                9 - Постер размером 360x540 в формате PIL.Image.Image
     '''
     api_client = KinopoiskApiClient(api)
     request_staff = StaffRequest(film_code)
     response_staff = api_client.staff.send_staff_request(request_staff)
+
+    directors_list = []
+    for item in response_staff.items:
+        if item.profession_text == 'Режиссеры':
+            if item.name_ru == '':
+                directors_list.append(item.name_en)
+            else:
+                directors_list.append(item.name_ru)
+
     staff_list = []
-    if len(response_staff.items) >= 11:
-        for i in range(0, 11):  # загружаем 11 персоналий (режиссер + 10 актеров)
-            if response_staff.items[i].name_ru == '':
-                staff_list.append(response_staff.items[i].name_en)
+    for item in response_staff.items:
+        if len(staff_list) == 10:
+            break
+        if item.profession_text == 'Актеры':
+            if item.name_ru == '':
+                staff_list.append(item.name_en)
             else:
-                staff_list.append(response_staff.items[i].name_ru)
-    else:
-        for i in range(0, len(response_staff.items)):
-            if response_staff.items[i].name_ru == '':
-                staff_list.append(response_staff.items[i].name_en)
-            else:
-                staff_list.append(response_staff.items[i].name_ru)
-        for i in range(11 - len(response_staff.items)):
-            staff_list.append("")
+                staff_list.append(item.name_ru)
+
     request_film = FilmRequest(film_code)
     response_film = api_client.films.send_film_request(request_film)
     # с помощью регулярного выражения находим значение стран в кавычках ''
     countries = re.findall("'([^']*)'", str(response_film.film.countries))
     # имя файла
     if response_film.film.name_ru is not None:
-        file_name = response_film.film.name_ru
         film_name = response_film.film.name_ru
     else:
-        file_name = response_film.film.name_original
         film_name = response_film.film.name_original
     # очистка имени файла от запрещенных символов
-    trtable = file_name.maketrans('', '', '\/:*?"<>')
-    file_name = file_name.translate(trtable)
+    trtable = film_name.maketrans('', '', '\/:*?"<>')
+    file_name = film_name.translate(trtable)
 
     # Сокращение описания фильма
     if shorten:
@@ -218,7 +220,9 @@ def get_film_info(film_code, api, shorten=False):
         film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries, description,
         response_film.film.poster_url, file_name
     ]
-    result = film_list + staff_list
+    result = film_list
+    result.append(directors_list)
+    result.append(staff_list)
     # загрузка постера
     cover_url = response_film.film.poster_url
     cover = requests.get(cover_url, stream=True)
@@ -288,7 +292,10 @@ def write_film_to_table(current_table, filminfo: list):
     run.font.size = Pt(10)
 
     paragraph = current_table.cell(1, 1).add_paragraph()  # режиссер
-    run = paragraph.add_run('Режиссер: ' + filminfo[7])
+    if len(filminfo[7]) > 1:
+        run = paragraph.add_run('Режиссеры: ' + ', '.join(filminfo[7]))
+    else:
+        run = paragraph.add_run('Режиссер: ' + filminfo[7][0])
     run.font.name = 'Arial'
     run.font.size = Pt(10)
 
@@ -299,7 +306,7 @@ def write_film_to_table(current_table, filminfo: list):
     run.font.color.rgb = RGBColor(255, 102, 0)
     run.font.name = 'Arial'
     run.font.size = Pt(10)
-    run = paragraph.add_run(', '.join(filminfo[8:18]))
+    run = paragraph.add_run(', '.join(filminfo[8]))
     run.font.color.rgb = RGBColor(0, 0, 255)
     run.font.name = 'Arial'
     run.font.size = Pt(10)
@@ -316,7 +323,7 @@ def write_film_to_table(current_table, filminfo: list):
     # запись постера в таблицу
     paragraph = current_table.cell(0, 0).paragraphs[1]
     run = paragraph.add_run()
-    run.add_picture(image_to_file(filminfo[18]), width=Cm(7))
+    run.add_picture(image_to_file(filminfo[9]), width=Cm(7))
 
 
 def write_all_films_to_docx(document, films: list, path: str):

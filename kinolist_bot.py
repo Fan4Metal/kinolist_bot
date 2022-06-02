@@ -10,7 +10,7 @@ from docx2pdf import convert
 from kinolist_lib import *
 import config
 
-VER = '0.3.3'
+VER = '0.3.4'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
