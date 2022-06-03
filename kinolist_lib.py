@@ -477,17 +477,18 @@ def main():
     parser = argparse.ArgumentParser(prog='Kinolist_Lib',
                                      description='Tool to create movie lists in docx format.',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     epilog=textwrap.dedent("""\
-                                     examples:
-                                        Kinolist_Lib -m \"Terminator\" \"Terminator 2\" KP~319
-                                        Kinolist_Lib -f movies.txt -o movies.docx
-                                        Kinolist_Lib -t ./Terminator.mp4
-                                        Kinolist_Lib -t c:\movies\Terminator.mp4
-                                        Kinolist_Lib -t
-                                        Kinolist_Lib -r
+                                     epilog="""
+examples:
+kl -m \"Terminator\" \"Terminator 2\" KP~319      ---make list.docx of 3 movies: Terminator,
+                                                 Terminator 2 and Terminator 3 (kp_id 319)
+kl -f movies.txt -o movies.docx               ---make movies.docx of movies in the movies.txt
+kl -t ./Terminator.mp4                        ---write tags to Terminator.mp4 in current directory
+kl -t c:\movies\Terminator.mp4                ---write tags to Terminator.mp4 in c:\movies
+kl --tag                                      ---write tags to all mp4 files in current directory
+kl -l                                         ---make list.docx of mp4 files in current directory
 
-                                        * Kinopoisk id can be set directly by placing tag KP~XXX in the title
-                                        """))
+* Kinopoisk id can be set directly by placing tag KP~XXX in the title
+                                        """)
     parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}")
     parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
     parser.add_argument("-m", "--movie", nargs="+", help="list of films")
@@ -593,7 +594,7 @@ def main():
             mp4_files_names.append(os.path.split(name)[1])
         for file in mp4_files_names:
             log.info(f"Найден файл: {file}")
-        log.info(f"Всего найдено: {len(mp4_files)}")
+        log.info(f"Всего файлов: {len(mp4_files)}")
 
         film_list = []
         for file in mp4_files:
