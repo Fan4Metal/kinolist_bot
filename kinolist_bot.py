@@ -2,6 +2,7 @@ import logging
 import shutil
 import os
 import argparse
+from random import choice
 
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -75,7 +76,15 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler(state='*', commands=['lisa', 'Lisa'])
 async def send_heart(message: types.Message):
-    await message.reply_sticker("CAACAgIAAxkBAAEEjSZiZXLQqPDFY70qC0m9PPH2AAEJjfgAAjIAA-Sgzgd7_cFVbY2YfiQE")
+    stickers = ["CAACAgIAAxkBAAEEjSZiZXLQqPDFY70qC0m9PPH2AAEJjfgAAjIAA-Sgzgd7_cFVbY2YfiQE",
+                "CAACAgIAAxkBAAEE56JimeqS59Ey3lewiSQVUELCyRg36QACQQADspiaDm4PLeCw1KxAJAQ",
+                "CAACAgIAAxkBAAEE56NimeqST5qTkoyZ4FH3v7RPWAxFkAACdRIAAgguuUgySuZE4jBZdiQE",
+                "CAACAgIAAxkBAAEE56RimeqSFOSFCQfwqqB7syw5Pka9GwACDwkAAhhC7gjWQ00JSrFY0yQE",
+                "CAACAgIAAxkBAAEE56VimeqSP8JYJPX5i3tzlO9URLECoAACqgAD5KDOB-HQd7qptDvWJAQ",
+                "CAACAgIAAxkBAAEE56ZimeqSBIVcEBiVOJUq1z8lrPOehgACwAgAAhhC7ghAwahsXqNd9SQE",
+                "CAACAgIAAxkBAAEE565imevqhC3H8qyDhAlKm_oGB7gcmAACSwMAArVx2gZu3ktViH-zcCQE"
+    ]
+    await message.reply_sticker(choice(stickers))
     log.info("Отправлен стикер")
 
 
