@@ -154,6 +154,51 @@ def find_kp_id(film_list, api):
     return result
 
 
+def find_kp_id2(film: str, api: str):
+    result = []
+    code_in_name = find_kp_id_in_title(film)
+    if code_in_name:
+        try:
+            film_info = get_film_info(code_in_name, api)
+            log.info(f'Найден фильм: {film_info[0]} ({film_info[1]}), kinopoisk id: {code_in_name}')
+            result.append(code_in_name)
+            result.append(film_info[0])
+            result.append({film_info[1]})
+            return result
+        except Exception:
+            return result
+    payload = {'keyword': film, 'page': 1}
+    headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
+    try:
+        r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
+                         headers=headers,
+                         params=payload)
+        if r.status_code == 200:
+            resp_json = r.json()
+            if resp_json['searchFilmsCountResult'] == 0:
+                log.info(f'{film} не найден')
+                return result
+            else:
+                id = resp_json['films'][0]['filmId']
+                year = resp_json['films'][0]['year']
+                if 'nameRu' in resp_json['films'][0]:
+                    found_film = resp_json['films'][0]['nameRu']
+                else:
+                    found_film = resp_json['films'][0]['nameEn']
+                log.info(f'Найден фильм: {found_film} ({year}), kinopoisk id: {id}')
+                result.append(id)
+                result.append(found_film)
+                result.append(year)
+                return result
+        else:
+            log.warning('Ошибка доступа к https://kinopoiskapiunofficial.tech')
+            return result
+    except Exception as e:
+        log.warning("Exeption:", str(e))
+        log.info(f'{film} не найден (exeption)')
+        return result
+
+
 def get_film_info(film_code, api, shorten=False):
     '''
     Получение информации о фильме с помощью kinopoisk_api_client.
