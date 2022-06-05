@@ -433,8 +433,11 @@ def write_tags_to_mp4(film: list, file_path: str):
 
 def docx_to_pdf_libre(file_in):
     file_in_abs = os.path.abspath(file_in)
-    dir_out_abs = os.path.split(file_in_abs)[0]
+    dir_out_abs = os.path.dirname(file_in_abs)
     soffice_path = "C:\Program Files\LibreOffice\program\soffice.exe"
+    if not os.path.isfile(soffice_path):
+        log.warning("Не найден файл soffice.exe. Возможно Libre Office не установлен.")
+        return 1
     command = f'"{soffice_path}" --headless --convert-to pdf --outdir {dir_out_abs} {file_in_abs}'
     code_exit = os.system(command)
     return code_exit

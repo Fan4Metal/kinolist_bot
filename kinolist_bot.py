@@ -27,8 +27,8 @@ args = parser.parse_args()
 # Configure logging
 if args.log:
     logging.basicConfig(filename='kinolist_bot.log', level=logging.INFO,
-                    format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
-                    datefmt='%d.%m.%Y %H:%M:%S')
+                        format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
+                        datefmt='%d.%m.%Y %H:%M:%S')
 else:
     logging.basicConfig(level=logging.INFO,
                         format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
