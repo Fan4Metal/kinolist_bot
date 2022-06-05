@@ -493,7 +493,7 @@ kl -l                                     --создает список list.doc
 
 * Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названиии фильма (где XXX - Kinopoisk_id)
                                         """)
-    parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}", help="Выводит версию программы и завершает работу")
+    parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}", help="выводит версию программы и завершает работу")
     parser.add_argument("-f", "--file", nargs=1, help="создает список фильмов в формате docx из текстового файла в формате txt")
     parser.add_argument("-m", "--movie", nargs="+", help="создает список фильмов в формате docx из указанных фильмов")
     parser.add_argument("-o", "--output", nargs=1, help="имя выходного файла (list.docx по умолчанию)")
