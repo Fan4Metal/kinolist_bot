@@ -34,7 +34,7 @@ else:
                         format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
                         datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("Bot")
-
+log.info(f"Kinolist_Bot ver. {VER}, Kinolist_Lib ver. {LIB_VER}")
 
 # Initialize bot and dispatcher
 storage = MemoryStorage()
