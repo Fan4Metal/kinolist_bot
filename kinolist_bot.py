@@ -1,6 +1,7 @@
 import logging
 import shutil
 import os
+import argparse_ru
 import argparse
 from random import choice
 
@@ -11,16 +12,16 @@ from docx2pdf import convert
 from kinolist_lib import *
 import config
 
-VER = '0.3.4'
+VER = '0.3.5'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
 
 parser = argparse.ArgumentParser(prog='Kinolist_Bot',
                                 description='Телеграм бот для быстрого создания списков фильмов (@kinolist_one_bot)')
-parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {VER}")
-parser.add_argument("-l", "--log", action='store_true', help="enable logging to file")
-parser.add_argument("--libre", action='store_true', help="enable pdf conversion using Libre Office")
+parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {VER}", help="выводит версию программы и завершает работу")
+parser.add_argument("-l", "--log", action='store_true', help="включает запись лога в файл kinolist_bot.log")
+parser.add_argument("--libre", action='store_true', help="конвертация docx в pdf с помощью Libre Office")
 args = parser.parse_args()
 
 # Configure logging
