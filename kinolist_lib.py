@@ -1,4 +1,3 @@
-import argparse
 import glob
 import io
 import logging
@@ -21,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.11"
+LIB_VER = "0.2.12"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -92,7 +91,7 @@ def find_kp_id_in_title(title: str):
         return id.group(1)
 
 
-def find_kp_id(film_list, api):
+def find_kp_id(film_list: list, api: str):
     """Gets list of kinopoisk ids for list of films
 
     Args:
@@ -473,30 +472,32 @@ def rename_torrents(api, path=""):
 
 
 def main():
+    import argparse_ru
+    import argparse
     from config import KINOPOISK_API_TOKEN as api
     parser = argparse.ArgumentParser(prog='Kinolist_Lib',
-                                     description='Tool to create movie lists in docx format.',
+                                     description='Библиотека для создания списков фильмов в формате docx.',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog="""
-examples:
-kl -m \"Terminator\" \"Terminator 2\" KP~319      ---make list.docx of 3 movies: Terminator,
-                                                 Terminator 2 and Terminator 3 (kp_id 319)
-kl -f movies.txt -o movies.docx               ---make movies.docx of movies in the movies.txt
-kl -t ./Terminator.mp4                        ---write tags to Terminator.mp4 in current directory
-kl -t c:\movies\Terminator.mp4                ---write tags to Terminator.mp4 in c:\movies
-kl --tag                                      ---write tags to all mp4 files in current directory
-kl -l                                         ---make list.docx of mp4 files in current directory
+Примеры:
+kl -m \"Terminator\" \"Terminator 2\" KP~319  --создает список list.docx из 3 фильмов: Terminator,
+                                              Terminator 2 и Terminator 3 (*)
+kl -f movies.txt -o movies.docx           --создает список movies.docx из всех фильмов в файле movies.txt
+kl -t ./Terminator.mp4                    --записывает теги в файл Terminator.mp4 в текущем каталоге
+kl -t c:\movies\Terminator.mp4            --записывает теги в файл Terminator.mp4 в каталоге c:\movies
+kl --tag                                  --записывает теги во все mp4 файлы в текущем каталоге
+kl -l                                     --создает список list.docx из всех mp4 файлов в текущем каталоге
 
-* Kinopoisk id can be set directly by placing tag KP~XXX in the title
+* Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названиии фильма (где XXX - Kinopoisk_id)
                                         """)
-    parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}")
-    parser.add_argument("-f", "--file", nargs=1, help="list of films in .txt format")
-    parser.add_argument("-m", "--movie", nargs="+", help="list of films")
-    parser.add_argument("-o", "--output", nargs=1, help="output file name (list.docx by default)")
-    parser.add_argument("-s", "--shorten", action='store_true', help="shorten movie descriptions")
-    parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="write tags to mp4 file (or to all mp4 files in folder)")
-    parser.add_argument("-r", "--rename", action='store_true', help="rename mp4 files in current directory")
-    parser.add_argument("-l", "--list", nargs="?", const=os.getcwd(), help="make docx list from mp4 files")
+    parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}", help="Выводит версию программы и завершает работу")
+    parser.add_argument("-f", "--file", nargs=1, help="создает список фильмов в формате docx из текстового файла в формате txt")
+    parser.add_argument("-m", "--movie", nargs="+", help="создает список фильмов в формате docx из указанных фильмов")
+    parser.add_argument("-o", "--output", nargs=1, help="имя выходного файла (list.docx по умолчанию)")
+    parser.add_argument("-s", "--shorten", action='store_true', help="сокращает описания фильмов, чтобы поместились два фильма на странице")
+    parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="записывает теги в файл mp4 (или во все mp4 файлы в текущем каталоге)")
+    parser.add_argument("-r", "--rename", action='store_true', help="переименовывает mp4 файлыв в текущем каталоге")
+    parser.add_argument("-l", "--list", nargs="?", const=os.getcwd(), help="создает список фильмов в формате docx из mp4 файлов в текущем каталоге")
     args = parser.parse_args()
 
     if args.output:
