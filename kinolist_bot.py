@@ -266,7 +266,8 @@ async def reply(message: types.Message):
         return
 
     for film in full_films_list:
-        text = fmt.text(fmt.text(fmt.bold(f"{film[0]} ({film[1]}) - Кинопоиск {film[2]}")),
+        text = fmt.text(fmt.text(fmt.bold(f"{film[0]} ({film[1]}) - Кинопоиск {film[2]}") if film[2] != None else
+                                 fmt.bold(f"{film[0]} ({film[1]}) - нет рейтинга") ),
                         fmt.text(", ".join(film[3])),
                         fmt.text("Режиссер:" if len(film[7]) ==1 else "Режиссеры:", text_to_markdown(", ".join(film[7]))),
                         fmt.text(""),
