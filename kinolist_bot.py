@@ -13,7 +13,7 @@ from docx2pdf import convert
 from kinolist_lib import *
 import config
 
-VER = '0.4.1'
+VER = '0.4.2'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
@@ -81,7 +81,7 @@ async def send_welcome(message: types.Message):
 async def send_welcome(message: types.Message):
     log.info(f"Переключение на отправку списков в чат (chat_id: {message.chat.id})")
     await DocFormat.info.set()
-    await message.reply("Ок, отправьте мне список фильмов, и я пришлю его описание в чат\.", parse_mode="MarkdownV2")
+    await message.reply("Ок, отправьте мне название фильма, и я пришлю его описание в чат\.", parse_mode="MarkdownV2")
 
 
 @dp.message_handler(state='*', commands=['lisa', 'Lisa'])
@@ -273,7 +273,7 @@ async def reply(message: types.Message):
                         fmt.text(""),
                         fmt.text("В главных ролях:", fmt.underline(", ".join(film[8]))),
                         fmt.text(""),
-                        fmt.text(text_to_markdown(film[4])),
+                        fmt.text(text_to_markdown(film[4]) if (film[4]) != None else ""),
                         sep="\n"
         )
         await message.reply_photo(film[6], caption=text, parse_mode="MarkdownV2")

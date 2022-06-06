@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.13"
+LIB_VER = "0.2.14"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -472,8 +472,11 @@ def rename_torrents(api, path=""):
 
 
 def text_to_markdown(text: str):
-    text_markdown = text.replace(".", "\\.")
+    text_markdown = text.replace(".", "\.")
     text_markdown = text_markdown.replace("-", "\-")
+    text_markdown = text_markdown.replace("(", "\(")
+    text_markdown = text_markdown.replace(")", "\)")
+    text_markdown = text_markdown.replace("!", "\!")
     return text_markdown
 
 
