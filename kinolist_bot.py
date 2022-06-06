@@ -8,11 +8,12 @@ from random import choice
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
+import aiogram.utils.markdown as fmt
 from docx2pdf import convert
 from kinolist_lib import *
 import config
 
-VER = '0.3.5'
+VER = '0.4.1'
 TELEGRAM_API_TOKEN = config.TELEGRAM_API_TOKEN
 KINOPOISK_API_TOKEN = config.KINOPOISK_API_TOKEN
 
@@ -46,6 +47,7 @@ dp = Dispatcher(bot, storage=storage)
 class DocFormat(StatesGroup):
     pdf = State()
     docx = State()
+    info = State()
 
 
 @dp.message_handler(state='*', commands=['start', 'help'])
@@ -73,6 +75,13 @@ async def send_welcome(message: types.Message):
     log.info(f"Переключение на отправку списков в формате pdf (chat_id: {message.chat.id})")
     await DocFormat.pdf.set()
     await message.reply("Ок, отправьте мне список фильмов, и я пришлю его в формате *pdf*\.", parse_mode="MarkdownV2")
+
+
+@dp.message_handler(state='*', commands=['info'])
+async def send_welcome(message: types.Message):
+    log.info(f"Переключение на отправку списков в чат (chat_id: {message.chat.id})")
+    await DocFormat.info.set()
+    await message.reply("Ок, отправьте мне список фильмов, и я пришлю его описание в чат\.", parse_mode="MarkdownV2")
 
 
 @dp.message_handler(state='*', commands=['lisa', 'Lisa'])
@@ -224,6 +233,52 @@ async def reply(message: types.Message):
             await message.reply_document(docx, caption='Список готов!')
     log.info(f'Список отправлен в чат: {chat_id}')
     shutil.rmtree(chat_id)
+    return
+
+
+@dp.message_handler(state=DocFormat.info)
+async def reply(message: types.Message):
+    if not is_api_ok(KINOPOISK_API_TOKEN):
+        log.warning("API error.")
+        await message.reply("Ой, что-то сломалось!((\n(API error)")
+        return
+
+    chat_id = str(message.chat.id)
+    log.info(f"Начало создания списка для chat_id: {chat_id}")
+
+    film_list = message.text.split('\n')
+    film_list = list(filter(None, film_list))
+    log.info("Запрос: " + ", ".join(film_list))
+
+    kp_id = find_kp_id(film_list, KINOPOISK_API_TOKEN)
+    film_codes = kp_id[0]
+    film_not_found = kp_id[1]
+
+    if len(film_not_found) > 0:
+        log.info(f'Не найдено: {", ".join(film_not_found)}')
+    if len(film_codes) == 0:
+        await message.reply("Ой, ничего не найдено!")
+        return
+
+    full_films_list = get_full_film_list(film_codes, KINOPOISK_API_TOKEN)
+    if len(full_films_list) < 1:
+        await message.reply("Ни один фильм не найден!")
+        return
+
+    for film in full_films_list:
+        photo = image_to_file(film[9])
+        photo.seek(0)
+        text = fmt.text(fmt.text(fmt.bold(f"{film[0]} ({film[1]}) - Кинопоиск {film[2]}")),
+                        fmt.text(", ".join(film[3])),
+                        fmt.text("Режиссер:" if len(film[7]) ==1 else "Режиссеры:", text_to_markdown(", ".join(film[7]))),
+                        fmt.text(""),
+                        fmt.text("В главных ролях:", fmt.underline(text_to_markdown(", ".join(film[8])))),
+                        fmt.text(""),
+                        fmt.text(text_to_markdown(film[4])),
+                        sep="\n"
+        )
+        await message.reply_photo(types.InputFile(photo), caption=text, parse_mode="MarkdownV2")
+    log.info(f'Информация о фильмах отправлена в чат: {chat_id}')
     return
 
 

@@ -474,6 +474,12 @@ def rename_torrents(api, path=""):
     log.info("Файлы переименованы.")
 
 
+def text_to_markdown(text: str):
+    text_markdown = text.replace(".", "\\.")
+    text_markdown = text_markdown.replace("-", "\\-")
+    return text_markdown
+
+
 def main():
     import argparse_ru
     import argparse
