@@ -266,18 +266,16 @@ async def reply(message: types.Message):
         return
 
     for film in full_films_list:
-        photo = image_to_file(film[9])
-        photo.seek(0)
         text = fmt.text(fmt.text(fmt.bold(f"{film[0]} ({film[1]}) - Кинопоиск {film[2]}")),
                         fmt.text(", ".join(film[3])),
                         fmt.text("Режиссер:" if len(film[7]) ==1 else "Режиссеры:", text_to_markdown(", ".join(film[7]))),
                         fmt.text(""),
-                        fmt.text("В главных ролях:", fmt.underline(text_to_markdown(", ".join(film[8])))),
+                        fmt.text("В главных ролях:", fmt.underline(", ".join(film[8]))),
                         fmt.text(""),
                         fmt.text(text_to_markdown(film[4])),
                         sep="\n"
         )
-        await message.reply_photo(types.InputFile(photo), caption=text, parse_mode="MarkdownV2")
+        await message.reply_photo(film[6], caption=text, parse_mode="MarkdownV2")
     log.info(f'Информация о фильмах отправлена в чат: {chat_id}')
     return
 

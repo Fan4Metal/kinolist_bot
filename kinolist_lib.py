@@ -209,7 +209,7 @@ def get_film_info(film_code, api, shorten=False):
                 3 - список стран
                 4 - описание
                 5 - ссылка на постер
-                6 - имя файла без расширения
+                6 - ссылка на превью постера
                 7 - список режиссеров
                 8 - список актеров
                 9 - Постер размером 360x540 в формате PIL.Image.Image
@@ -245,9 +245,6 @@ def get_film_info(film_code, api, shorten=False):
         film_name = response_film.film.name_ru
     else:
         film_name = response_film.film.name_original
-    # очистка имени файла от запрещенных символов
-    trtable = film_name.maketrans('', '', '\/:*?"<>')
-    file_name = film_name.translate(trtable)
 
     # Сокращение описания фильма
     if shorten:
@@ -262,7 +259,7 @@ def get_film_info(film_code, api, shorten=False):
 
     film_list = [
         film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries, description,
-        response_film.film.poster_url, file_name
+        response_film.film.poster_url, response_film.film.poster_url_preview
     ]
     result = film_list
     result.append(directors_list)
@@ -476,7 +473,7 @@ def rename_torrents(api, path=""):
 
 def text_to_markdown(text: str):
     text_markdown = text.replace(".", "\\.")
-    text_markdown = text_markdown.replace("-", "\\-")
+    text_markdown = text_markdown.replace("-", "\-")
     return text_markdown
 
 
