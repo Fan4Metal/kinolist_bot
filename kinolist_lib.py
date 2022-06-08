@@ -440,7 +440,7 @@ def docx_to_pdf_libre(file_in):
     return code_exit
 
 
-def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool=False):
+def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool = False):
     file_path = get_resource_path(template)
     doc = Document(file_path)
     full_list = get_full_film_list(kp_id_list, api, shorten)
@@ -499,14 +499,32 @@ kl -l                                     --создает список list.doc
 
 * Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названиии фильма (где XXX - Kinopoisk_id)
                                         """)
-    parser.add_argument("-ver", "--version", action="version", version=f"%(prog)s {LIB_VER}", help="выводит версию программы и завершает работу")
-    parser.add_argument("-f", "--file", nargs=1, help="создает список фильмов в формате docx из текстового файла в формате txt")
+    parser.add_argument("-ver",
+                        "--version",
+                        action="version",
+                        version=f"%(prog)s {LIB_VER}",
+                        help="выводит версию программы и завершает работу")
+    parser.add_argument("-f",
+                        "--file",
+                        nargs=1,
+                        help="создает список фильмов в формате docx из текстового файла в формате txt")
     parser.add_argument("-m", "--movie", nargs="+", help="создает список фильмов в формате docx из указанных фильмов")
     parser.add_argument("-o", "--output", nargs=1, help="имя выходного файла (list.docx по умолчанию)")
-    parser.add_argument("-s", "--shorten", action='store_true', help="сокращает описания фильмов, чтобы поместились два фильма на странице")
-    parser.add_argument("-t", "--tag", nargs="?", const=os.getcwd(), help="записывает теги в файл mp4 (или во все mp4 файлы в текущем каталоге)")
+    parser.add_argument("-s",
+                        "--shorten",
+                        action='store_true',
+                        help="сокращает описания фильмов, чтобы поместились два фильма на странице")
+    parser.add_argument("-t",
+                        "--tag",
+                        nargs="?",
+                        const=os.getcwd(),
+                        help="записывает теги в файл mp4 (или во все mp4 файлы в текущем каталоге)")
     parser.add_argument("-r", "--rename", action='store_true', help="переименовывает mp4 файлыв в текущем каталоге")
-    parser.add_argument("-l", "--list", nargs="?", const=os.getcwd(), help="создает список фильмов в формате docx из mp4 файлов в текущем каталоге")
+    parser.add_argument("-l",
+                        "--list",
+                        nargs="?",
+                        const=os.getcwd(),
+                        help="создает список фильмов в формате docx из mp4 файлов в текущем каталоге")
     args = parser.parse_args()
 
     if args.output:
@@ -610,7 +628,7 @@ kl -l                                     --создает список list.doc
         for file in mp4_files:
             film_list.append(os.path.splitext(os.path.basename(file))[0])
         kp_id = find_kp_id(film_list, api)
-        if len (kp_id[1]) > 0:
+        if len(kp_id[1]) > 0:
             log.warning("Следующие фильмы не найдены: " + ", ".join(kp_id[1]))
         template = "template.docx"
         make_docx(kp_id[0], output, template, api, args.shorten)
