@@ -448,26 +448,45 @@ def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: b
 
 
 def rename_torrents(api, path=""):
-    mp4_files = glob.glob(os.path.join(path, '*.mp4'))
-    if len(mp4_files) == 0:
+    files_paths = glob.glob(path)
+    if len(files_paths) == 0:
         log.warning("Файлы не найдены.")
         return
-    titles = []
-    for file in mp4_files:
-        titles.append(PTN.parse(file)["title"])
-    print(titles)
+
+    titles_all = []  # список кортежей (полный путь, имя файла, расширение)
+    titles = []  # список распознанных парсером имен
+    for file in files_paths:
+        base_name = os.path.basename(file)
+        tuple = (file,
+                 os.path.splitext(base_name)[0],
+                 os.path.splitext(base_name)[1],
+        )
+        titles_all.append(tuple)
+        titles.append(PTN.parse(base_name)['title'])
+
     id_list = find_kp_id(titles, api)
     if len(id_list[0]) == 0:
         log.warning("Фильмы не найдены.")
         return
-    mp4_files_valid = []
-    for index in range(len(mp4_files)):
+
+    titles_all_valid = []  # список кортежей (полный путь, имя файла, расширение) с только найденными фильмами
+    for index in range(len(titles_all)):
         if titles[index] not in id_list[1]:
-            mp4_files_valid.append(mp4_files[index])
+            titles_all_valid.append(titles_all[index])
+
     films = get_full_film_list(id_list[0], api)
+
     for index, film in enumerate(films):
-        os.rename(mp4_files_valid[index], f"{film[0]}.mp4")
-        log.info(f"{mp4_files_valid[index]} --> {film[0]}.mp4")
+        trtable = film[0].maketrans('', '', '\/:*?"<>')
+        file_name = film[0].translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
+        os.rename(titles_all_valid[index][0],  # путь до исходного файла
+                  os.path.join(
+                      os.path.dirname(titles_all_valid[index][0]),  # каталог исходного файла
+                      f"{file_name}{titles_all_valid[index][2]}"  # новое имя файла + исходное расширение
+                      )
+                  )
+        log.info(f"{titles_all_valid[index][1]}{titles_all_valid[index][2]} --> {file_name}{titles_all_valid[index][2]}")
+
     log.info("Файлы переименованы.")
 
 
@@ -519,7 +538,10 @@ kl -l                                     --создает список list.doc
                         nargs="?",
                         const=os.getcwd(),
                         help="записывает теги в файл mp4 (или во все mp4 файлы в текущем каталоге)")
-    parser.add_argument("-r", "--rename", action='store_true', help="переименовывает mp4 файлыв в текущем каталоге")
+    parser.add_argument("-r", "--rename",
+                        nargs="?",
+                        const=os.getcwd(),
+                        help="переименовывает mp4 файлыв в текущем каталоге")
     parser.add_argument("-l",
                         "--list",
                         nargs="?",
@@ -634,7 +656,7 @@ kl -l                                     --создает список list.doc
         make_docx(kp_id[0], output, template, api, args.shorten)
 
     elif args.rename:
-        rename_torrents(api)
+        rename_torrents(api, args.rename)
 
 
 if __name__ == "__main__":

@@ -7,3 +7,4 @@ Pillow
 docx2pdf
 tqdm
 mutagen
+parse-torrent-title
