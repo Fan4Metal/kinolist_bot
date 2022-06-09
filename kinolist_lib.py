@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.14"
+LIB_VER = "0.2.15"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
