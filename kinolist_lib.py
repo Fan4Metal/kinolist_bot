@@ -514,6 +514,7 @@ kl -f movies.txt -o movies.docx           --создает список movies.d
 kl -t ./Terminator.mp4                    --записывает теги в файл Terminator.mp4 в текущем каталоге
 kl -t c:\movies\Terminator.mp4            --записывает теги в файл Terminator.mp4 в каталоге c:\movies
 kl --tag                                  --записывает теги во все mp4 файлы в текущем каталоге
+kl -r *.mp4                               --переименовывает mp4 файлы в текущем каталоге (торрент -> название.mp4)
 kl -l                                     --создает список list.docx из всех mp4 файлов в текущем каталоге
 
 * Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названиии фильма (где XXX - Kinopoisk_id)
