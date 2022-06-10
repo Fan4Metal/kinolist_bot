@@ -15,12 +15,12 @@ from docx.shared import Cm, Pt, RGBColor
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.film_request import FilmRequest
 from kinopoisk_unofficial.request.staff.staff_request import StaffRequest
-from mutagen.mp4 import MP4, MP4Cover
+from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
 from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.16"
+LIB_VER = "0.2.17"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -418,7 +418,11 @@ def write_tags_to_mp4(film: list, file_path: str):
         film (list): Информация о фильме
         file_path (str): Путь к файлу mp4
     """
-    video = MP4(file_path)
+    try:
+        video = MP4(file_path)
+    except MP4StreamInfoError as error:
+        log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
+        return False
     video.delete()  # удаление всех тегов
     video["\xa9nam"] = film[0]  # title
     video["desc"] = film[4]  # description
@@ -426,6 +430,7 @@ def write_tags_to_mp4(film: list, file_path: str):
     video["\xa9day"] = str(film[1])  # year
     video["covr"] = [MP4Cover(image_to_file(film[9]).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
     video.save()
+    return True
 
 
 def clear_tags(file_path: str):
@@ -434,9 +439,14 @@ def clear_tags(file_path: str):
     Args:
         file_path (str): Путь к файлу mp4
     """
-    video = MP4(file_path)
+    try:
+        video = MP4(file_path)
+    except MP4StreamInfoError as error:
+        log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
+        return False
     video.delete()  # удаление всех тегов
     video.save()
+    return True
 
 
 def docx_to_pdf_libre(file_in):
@@ -618,7 +628,9 @@ kl -l                                     --создает список list.doc
                 return
             kp_id = kp_ids[0][0]
             film_info = get_film_info(kp_id, api)
-            write_tags_to_mp4(film_info, path)
+            if not write_tags_to_mp4(film_info, path):
+                log.info(f"Тег не записан в файл: {mp4_file}")
+                return
             log.info(f"Записан тег в файл: {mp4_file}")
 
         elif os.path.isdir(path):
@@ -639,13 +651,15 @@ kl -l                                     --создает список list.doc
                 film_list.append(os.path.splitext(os.path.basename(file))[0])
             kp_id = find_kp_id(film_list, api)
             mp4_files_valid = []
-            for index in range(len(mp4_files)):
-                if film_list[index] not in kp_id[1]:
-                    mp4_files_valid.append(mp4_files[index])
+            for i in range(len(mp4_files)):
+                if film_list[i] not in kp_id[1]:
+                    mp4_files_valid.append(mp4_files[i])
             full_films_list = get_full_film_list(kp_id[0], api)
-            for index, film in enumerate(full_films_list):
-                write_tags_to_mp4(film, mp4_files_valid[index])
-                log.info(f"Записан тег в файл: {mp4_files_valid[index]}")
+            for i, film in enumerate(full_films_list):
+                if not write_tags_to_mp4(film, mp4_files_valid[i]):
+                    log.warning(f"Тег не записан в файл: {os.path.basename(mp4_files_valid[i])}")
+                    return
+                log.info(f"Записан тег в файл: {os.path.basename(mp4_files_valid[i])}")
         else:
             log.error("Неверно указан путь.")
 
@@ -657,7 +671,9 @@ kl -l                                     --создает список list.doc
             if ext != ".mp4":
                 log.error("Можно записывать теги только в файлы mp4.")
                 return
-            clear_tags(path)
+            if not clear_tags(path):
+                log.warning(f"Теги не удалены в файле: {os.path.basename(path)}")
+                return
             log.info(f"Теги удалены в файле: {os.path.basename(path)}")
 
         elif os.path.isdir(path):
@@ -667,7 +683,9 @@ kl -l                                     --создает список list.doc
                 log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
                 return
             for file in mp4_files:
-                clear_tags(file)
+                if not clear_tags(file):
+                    log.warning(f"Ошибка! Теги не удалены в файле: {os.path.basename(file)}")
+                    return
                 log.info(f"Теги удалены в файле: {os.path.basename(file)}")
         else:
             log.error("Неверно указан путь.")
