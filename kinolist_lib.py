@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.15"
+LIB_VER = "0.2.16"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -424,7 +424,18 @@ def write_tags_to_mp4(film: list, file_path: str):
     video["desc"] = film[4]  # description
     video["ldes"] = film[4]  # long description
     video["\xa9day"] = str(film[1])  # year
-    video["covr"] = [MP4Cover(image_to_file(film[18]).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
+    video["covr"] = [MP4Cover(image_to_file(film[9]).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
+    video.save()
+
+
+def clear_tags(file_path: str):
+    """Удаление тегов в файле mp4.
+
+    Args:
+        file_path (str): Путь к файлу mp4
+    """
+    video = MP4(file_path)
+    video.delete()  # удаление всех тегов
     video.save()
 
 
@@ -464,28 +475,28 @@ def rename_torrents(api, path=""):
         titles_all.append(tuple)
         titles.append(PTN.parse(base_name)['title'])
 
-    id_list = find_kp_id(titles, api)
-    if len(id_list[0]) == 0:
+    id_list, films_not_found = find_kp_id(titles, api)
+    if len(id_list) == 0:
         log.warning("Фильмы не найдены.")
         return
 
     titles_all_valid = []  # список кортежей (полный путь, имя файла, расширение) с только найденными фильмами
-    for index in range(len(titles_all)):
-        if titles[index] not in id_list[1]:
-            titles_all_valid.append(titles_all[index])
+    for i in range(len(titles_all)):
+        if titles[i] not in films_not_found:
+            titles_all_valid.append(titles_all[i])
 
-    films = get_full_film_list(id_list[0], api)
+    films = get_full_film_list(id_list, api)
 
-    for index, film in enumerate(films):
+    for i, film in enumerate(films):
         trtable = film[0].maketrans('', '', '\/:*?"<>')
         file_name = film[0].translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
-        os.rename(titles_all_valid[index][0],  # путь до исходного файла
+        os.rename(titles_all_valid[i][0],  # путь до исходного файла
                   os.path.join(
-                      os.path.dirname(titles_all_valid[index][0]),  # каталог исходного файла
-                      f"{file_name}{titles_all_valid[index][2]}"  # новое имя файла + исходное расширение
-                      )
+                        os.path.dirname(titles_all_valid[i][0]),  # путь до каталога исходного файла
+                        f"{file_name}{titles_all_valid[i][2]}"  # новое имя файла + исходное расширение
+                        )
                   )
-        log.info(f"{titles_all_valid[index][1]}{titles_all_valid[index][2]} --> {file_name}{titles_all_valid[index][2]}")
+        log.info(f"{titles_all_valid[i][1]}{titles_all_valid[i][2]} --> {file_name}{titles_all_valid[i][2]}")
 
     log.info("Файлы переименованы.")
 
@@ -514,6 +525,7 @@ kl -f movies.txt -o movies.docx           --создает список movies.d
 kl -t ./Terminator.mp4                    --записывает теги в файл Terminator.mp4 в текущем каталоге
 kl -t c:\movies\Terminator.mp4            --записывает теги в файл Terminator.mp4 в каталоге c:\movies
 kl --tag                                  --записывает теги во все mp4 файлы в текущем каталоге
+kl --cleartags                            --удаляет все теги во всех mp4 файлай в текущем каталоге
 kl -r *.mp4                               --переименовывает mp4 файлы в текущем каталоге (торрент -> название.mp4)
 kl -l                                     --создает список list.docx из всех mp4 файлов в текущем каталоге
 
@@ -539,6 +551,10 @@ kl -l                                     --создает список list.doc
                         nargs="?",
                         const=os.getcwd(),
                         help="записывает теги в файл mp4 (или во все mp4 файлы в текущем каталоге)")
+    parser.add_argument("--cleartags",
+                        nargs="?",
+                        const=os.getcwd(),
+                        help="удаляет все теги в файле mp4 (или во всех mp4 файлах в текущем каталоге)")
     parser.add_argument("-r", "--rename",
                         nargs="?",
                         const=os.getcwd(),
@@ -633,6 +649,29 @@ kl -l                                     --создает список list.doc
         else:
             log.error("Неверно указан путь.")
 
+    elif args.cleartags:
+        path = args.cleartags
+        if os.path.isfile(path):
+            mp4_file = os.path.basename(path)
+            name, ext = os.path.splitext(mp4_file)
+            if ext != ".mp4":
+                log.error("Можно записывать теги только в файлы mp4.")
+                return
+            clear_tags(path)
+            log.info(f"Теги удалены в файле: {os.path.basename(path)}")
+
+        elif os.path.isdir(path):
+            log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
+            mp4_files = glob.glob(os.path.join(path, '*.mp4'))
+            if len(mp4_files) == 0:
+                log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
+                return
+            for file in mp4_files:
+                clear_tags(file)
+                log.info(f"Теги удалены в файле: {os.path.basename(file)}")
+        else:
+            log.error("Неверно указан путь.")
+
     elif args.list:
         path = args.list
         log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
@@ -650,11 +689,11 @@ kl -l                                     --создает список list.doc
         film_list = []
         for file in mp4_files:
             film_list.append(os.path.splitext(os.path.basename(file))[0])
-        kp_id = find_kp_id(film_list, api)
-        if len(kp_id[1]) > 0:
-            log.warning("Следующие фильмы не найдены: " + ", ".join(kp_id[1]))
+        kp_id, films_not_found = find_kp_id(film_list, api)
+        if len(films_not_found) > 0:
+            log.warning("Следующие фильмы не найдены: " + ", ".join(films_not_found))
         template = "template.docx"
-        make_docx(kp_id[0], output, template, api, args.shorten)
+        make_docx(kp_id, output, template, api, args.shorten)
 
     elif args.rename:
         rename_torrents(api, args.rename)
