@@ -468,14 +468,20 @@ def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: b
     write_all_films_to_docx(doc, full_list, output)
 
 
-def rename_torrents(api, path=""):
+def rename_torrents(api: str, path=""):
+    """Парсит имя из торрент файла и переименовывает в формат: название.ext
+
+    Args:
+        api (str): токен kinopoisk api
+        path (str, optional): путь до файла. По умолчанию "".
+    """
     files_paths = glob.glob(path)
     if len(files_paths) == 0:
         log.warning("Файлы не найдены.")
         return
 
     titles_all = []  # список кортежей (полный путь, имя файла, расширение)
-    titles = []  # список распознанных парсером имен
+    titles_parsed = []  # список распознанных парсером имен
     for file in files_paths:
         base_name = os.path.basename(file)
         tuple = (file,
@@ -483,21 +489,21 @@ def rename_torrents(api, path=""):
                  os.path.splitext(base_name)[1],
         )
         titles_all.append(tuple)
-        titles.append(PTN.parse(base_name)['title'])
+        titles_parsed.append(PTN.parse(base_name)['title'])
 
-    id_list, films_not_found = find_kp_id(titles, api)
+    id_list, films_not_found = find_kp_id(titles_parsed, api)
     if len(id_list) == 0:
         log.warning("Фильмы не найдены.")
         return
 
     titles_all_valid = []  # список кортежей (полный путь, имя файла, расширение) с только найденными фильмами
     for i in range(len(titles_all)):
-        if titles[i] not in films_not_found:
+        if titles_parsed[i] not in films_not_found:
             titles_all_valid.append(titles_all[i])
 
-    films = get_full_film_list(id_list, api)
+    films_info = get_full_film_list(id_list, api)
 
-    for i, film in enumerate(films):
+    for i, film in enumerate(films_info):
         trtable = film[0].maketrans('', '', '\/:*?"<>')
         file_name = film[0].translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
         os.rename(titles_all_valid[i][0],  # путь до исходного файла
@@ -511,7 +517,15 @@ def rename_torrents(api, path=""):
     log.info("Файлы переименованы.")
 
 
-def text_to_markdown(text: str):
+def text_to_markdown(text: str) -> str:
+    """Экранирует символы для вывода в режиме markdown
+
+    Args:
+        text (str): текст
+
+    Returns:
+        str: текст с экранированием
+    """
     text_markdown = text.replace(".", "\.")
     text_markdown = text_markdown.replace("-", "\-")
     text_markdown = text_markdown.replace("(", "\(")
@@ -576,6 +590,7 @@ kl -l                                     --создает список list.doc
                         help="создает список фильмов в формате docx из mp4 файлов в текущем каталоге")
     args = parser.parse_args()
 
+    # определяем выходной файл
     if args.output:
         output = args.output[0]
         output_dir, output_file_name = os.path.split(output)
@@ -587,6 +602,7 @@ kl -l                                     --создает список list.doc
     else:
         output = "list.docx"
 
+    # список docx по списку txt
     if args.file:
         list = file_to_list((args.file[0]))
         if len(list) == 0:
@@ -600,6 +616,7 @@ kl -l                                     --создает список list.doc
         template = "template.docx"
         make_docx(kp_codes[0], output, template, api, args.shorten)
 
+    # список docx из параметров
     elif args.movie:
         film = args.movie
         kp_codes = find_kp_id(film, api)
@@ -612,6 +629,7 @@ kl -l                                     --создает список list.doc
         template = "template.docx"
         make_docx(kp_codes[0], output, template, api, args.shorten)
 
+    # запись тегов в mp4
     elif args.tag:
         path = args.tag
         if os.path.isfile(path):
@@ -663,6 +681,7 @@ kl -l                                     --создает список list.doc
         else:
             log.error("Неверно указан путь.")
 
+    # очистка тегов
     elif args.cleartags:
         path = args.cleartags
         if os.path.isfile(path):
@@ -690,6 +709,7 @@ kl -l                                     --создает список list.doc
         else:
             log.error("Неверно указан путь.")
 
+    # список по mp4 файлам
     elif args.list:
         path = args.list
         log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
@@ -713,6 +733,7 @@ kl -l                                     --создает список list.doc
         template = "template.docx"
         make_docx(kp_id, output, template, api, args.shorten)
 
+    # переимонование torrent файлов
     elif args.rename:
         rename_torrents(api, args.rename)
 
