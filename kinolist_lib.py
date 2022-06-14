@@ -335,7 +335,7 @@ def write_film_to_table(current_table, filminfo: list):
     paragraph = current_table.cell(1, 1).add_paragraph()  # режиссер
     if len(filminfo[7]) > 1:
         run = paragraph.add_run('Режиссеры: ' + ', '.join(filminfo[7]))
-    else:
+    elif filminfo[7]:
         run = paragraph.add_run('Режиссер: ' + filminfo[7][0])
     run.font.name = 'Arial'
     run.font.size = Pt(10)
@@ -425,9 +425,11 @@ def write_tags_to_mp4(film: list, file_path: str):
         return False
     video.delete()  # удаление всех тегов
     video["\xa9nam"] = film[0]  # title
-    video["desc"] = film[4]  # description
-    video["ldes"] = film[4]  # long description
-    video["\xa9day"] = str(film[1])  # year
+    if film[4]:
+        video["desc"] = film[4]  # description
+        video["ldes"] = film[4]  # long description
+    if film[1]:
+        video["\xa9day"] = str(film[1])  # year
     video["covr"] = [MP4Cover(image_to_file(film[9]).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
     video.save()
     return True
