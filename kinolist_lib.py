@@ -649,7 +649,7 @@ kl -l                                     --создает список list.doc
             kp_id = kp_ids[0][0]
             film_info = get_film_info(kp_id, api)
             if not write_tags_to_mp4(film_info, path):
-                log.info(f"Тег не записан в файл: {mp4_file}")
+                log.warning(f"Тег не записан в файл: {mp4_file}")
                 return
             log.info(f"Записан тег в файл: {mp4_file}")
 
@@ -669,12 +669,12 @@ kl -l                                     --создает список list.doc
             film_list = []
             for file in mp4_files:
                 film_list.append(os.path.splitext(os.path.basename(file))[0])
-            kp_id = find_kp_id(film_list, api)
+            kp_ids, films_not_found = find_kp_id(film_list, api)
             mp4_files_valid = []
             for i in range(len(mp4_files)):
-                if film_list[i] not in kp_id[1]:
+                if film_list[i] not in films_not_found:
                     mp4_files_valid.append(mp4_files[i])
-            full_films_list = get_full_film_list(kp_id[0], api)
+            full_films_list = get_full_film_list(kp_ids, api)
             for i, film in enumerate(full_films_list):
                 if not write_tags_to_mp4(film, mp4_files_valid[i]):
                     log.warning(f"Тег не записан в файл: {os.path.basename(mp4_files_valid[i])}")
