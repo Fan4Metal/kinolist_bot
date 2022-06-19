@@ -1,7 +1,6 @@
 aiogram
 python-docx
 kinopoisk-api-unofficial-client
-kinopoiskpy
 requests
 Pillow
 docx2pdf

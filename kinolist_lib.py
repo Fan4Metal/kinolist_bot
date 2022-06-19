@@ -9,7 +9,7 @@ import time
 from copy import deepcopy
 from pathlib import Path
 
-import requests
+from requests import get
 from docx import Document
 from docx.shared import Cm, Pt, RGBColor
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
@@ -121,7 +121,7 @@ def find_kp_id(film_list: list, api: str):
         payload = {'keyword': film, 'page': 1}
         headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
         try:
-            r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
+            r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
                              headers=headers,
                              params=payload)
             if r.status_code == 200:
@@ -169,7 +169,7 @@ def find_kp_id2(film: str, api: str):
     payload = {'keyword': film, 'page': 1}
     headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
     try:
-        r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
+        r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
                          headers=headers,
                          params=payload)
         if r.status_code == 200:
@@ -266,7 +266,7 @@ def get_film_info(film_code, api, shorten=False):
     result.append(staff_list)
     # загрузка постера
     cover_url = response_film.film.poster_url
-    cover = requests.get(cover_url, stream=True)
+    cover = get(cover_url, stream=True)
     if cover.status_code == 200:
         cover.raw.decode_content = True
         image = Image.open(cover.raw)
@@ -314,7 +314,7 @@ def write_film_to_table(current_table, filminfo: list):
         filminfo (list): информация о фильме
     """
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
-    if filminfo[2] == None:
+    if filminfo[2] is None:
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'нет рейтинга')
     else:
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
@@ -373,7 +373,7 @@ def write_all_films_to_docx(document, films: list, path: str):
     Args:
         document (_type_): Объект файла docx
         films (list): Список с информацией о фильмах
-        path (str): Путь и имя для сохранения нового файла docx 
+        path (str): Путь и имя для сохранения нового файла docx
 
     """
     table_num = len(films)
@@ -488,8 +488,7 @@ def rename_torrents(api: str, path=""):
         base_name = os.path.basename(file)
         tuple = (file,
                  os.path.splitext(base_name)[0],
-                 os.path.splitext(base_name)[1],
-        )
+                 os.path.splitext(base_name)[1])
         titles_all.append(tuple)
         titles_parsed.append(PTN.parse(base_name)['title'])
 
