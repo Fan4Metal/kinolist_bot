@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.18"
+LIB_VER = "0.2.19"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -147,10 +147,7 @@ def find_kp_id(film_list: list, api: str):
             log.info(f'{film} не найден (exeption)')
             film_not_found.append(film)
             continue
-    result = []
-    result.append(film_codes)
-    result.append(film_not_found)
-    return result
+    return [film_codes, film_not_found]
 
 
 def find_kp_id2(film: str, api: str):
@@ -241,7 +238,7 @@ def get_film_info(film_code, api, shorten=False):
     # с помощью регулярного выражения находим значение стран в кавычках ''
     countries = re.findall("'([^']*)'", str(response_film.film.countries))
     # имя файла
-    if response_film.film.name_ru is not None:
+    if response_film.film.name_ru:
         film_name = response_film.film.name_ru
     else:
         film_name = response_film.film.name_original
@@ -550,11 +547,11 @@ kl -f movies.txt -o movies.docx           --создает список movies.d
 kl -t ./Terminator.mp4                    --записывает теги в файл Terminator.mp4 в текущем каталоге
 kl -t c:\movies\Terminator.mp4            --записывает теги в файл Terminator.mp4 в каталоге c:\movies
 kl --tag                                  --записывает теги во все mp4 файлы в текущем каталоге
-kl --cleartags                            --удаляет все теги во всех mp4 файлай в текущем каталоге
+kl --cleartags                            --удаляет все теги во всех mp4 файлах в текущем каталоге
 kl -r *.mp4                               --переименовывает mp4 файлы в текущем каталоге (торрент -> название.mp4)
 kl -l                                     --создает список list.docx из всех mp4 файлов в текущем каталоге
 
-* Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названиии фильма (где XXX - Kinopoisk_id)
+* Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названии фильма (где XXX - Kinopoisk_id)
                                         """)
     parser.add_argument("-ver",
                         "--version",
@@ -598,7 +595,7 @@ kl -l                                     --создает список list.doc
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         ext = os.path.splitext(output_file_name)[1]
         if ext != ".docx":
-            print("Output file must have .docx extension.")
+            print("Выходной файл должен иметь расширение docx.")
             return
     else:
         output = "list.docx"
@@ -689,7 +686,7 @@ kl -l                                     --создает список list.doc
             mp4_file = os.path.basename(path)
             name, ext = os.path.splitext(mp4_file)
             if ext != ".mp4":
-                log.error("Можно записывать теги только в файлы mp4.")
+                log.error("Можно удалять теги только в файлах mp4.")
                 return
             if not clear_tags(path):
                 log.warning(f"Теги не удалены в файле: {os.path.basename(path)}")
