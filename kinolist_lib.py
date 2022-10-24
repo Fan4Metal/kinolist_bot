@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.19"
+LIB_VER = "0.2.20"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -563,6 +563,9 @@ kl -l                                     --создает список list.doc
                         nargs=1,
                         help="создает список фильмов в формате docx из текстового файла в формате txt")
     parser.add_argument("-m", "--movie", nargs="+", help="создает список фильмов в формате docx из указанных фильмов")
+    parser.add_argument("--test",
+                        action='store_true',
+                        help="тестовый поиск фильмов без создания списка, работает с параметрами --file и --movie")
     parser.add_argument("-o", "--output", nargs=1, help="имя выходного файла (list.docx по умолчанию)")
     parser.add_argument("-s",
                         "--shorten",
@@ -586,6 +589,8 @@ kl -l                                     --создает список list.doc
                         nargs="?",
                         const=os.getcwd(),
                         help="создает список фильмов в формате docx из mp4 файлов в текущем каталоге")
+
+                        
     args = parser.parse_args()
 
     # определяем выходной файл
@@ -610,9 +615,16 @@ kl -l                                     --создает список list.doc
         kp_codes = find_kp_id(list, api)
         if len(kp_codes[1]) != 0:
             for code in kp_codes[1]:
-                log.warning(f"Фильм не найден, kinopoisk id: {code}")
-        template = "template.docx"
-        make_docx(kp_codes[0], output, template, api, args.shorten)
+                log.warning(f"Фильм не найден: {code}")
+        if args.test:
+            log.info("Список не создан (тестовый режим)")
+            return
+        if kp_codes[0]:
+            template = "template.docx"
+            make_docx(kp_codes[0], output, template, api, args.shorten)
+        else:
+            log.info("Список не создан.")
+            
 
     # список docx из параметров
     elif args.movie:
@@ -620,7 +632,10 @@ kl -l                                     --создает список list.doc
         kp_codes = find_kp_id(film, api)
         if len(kp_codes[1]) != 0:
             for code in kp_codes[1]:
-                log.warning(f"Фильм не найден, kinopoisk id: {code}")
+                log.warning(f"Фильм не найден: {code}")
+        if args.test:
+            log.info("Список не создан (тестовый режим)")
+            return
         if len(kp_codes[0]) == 0:
             log.warning("Фильмы не найдены.")
             return
