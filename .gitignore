@@ -151,6 +151,7 @@ list*
 # exlude
 !requirements.txt
 !list_example.png
+!freeze.txt
 
 favicon_io/
 tempCodeRunnerFile.py
