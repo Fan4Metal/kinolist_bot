@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.20"
+LIB_VER = "0.2.22"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -122,8 +122,8 @@ def find_kp_id(film_list: list, api: str):
         headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
         try:
             r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
-                             headers=headers,
-                             params=payload)
+                    headers=headers,
+                    params=payload)
             if r.status_code == 200:
                 resp_json = r.json()
                 if resp_json['searchFilmsCountResult'] == 0:
@@ -166,9 +166,7 @@ def find_kp_id2(film: str, api: str):
     payload = {'keyword': film, 'page': 1}
     headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
     try:
-        r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
-                         headers=headers,
-                         params=payload)
+        r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
         if r.status_code == 200:
             resp_json = r.json()
             if resp_json['searchFilmsCountResult'] == 0:
@@ -483,9 +481,7 @@ def rename_torrents(api: str, path=""):
     titles_parsed = []  # список распознанных парсером имен
     for file in files_paths:
         base_name = os.path.basename(file)
-        tuple = (file,
-                 os.path.splitext(base_name)[0],
-                 os.path.splitext(base_name)[1])
+        tuple = (file, os.path.splitext(base_name)[0], os.path.splitext(base_name)[1])
         titles_all.append(tuple)
         titles_parsed.append(PTN.parse(base_name)['title'])
 
@@ -504,12 +500,12 @@ def rename_torrents(api: str, path=""):
     for i, film in enumerate(films_info):
         trtable = film[0].maketrans('', '', '\/:*?"<>')
         file_name = film[0].translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
-        os.rename(titles_all_valid[i][0],  # путь до исходного файла
-                  os.path.join(
-                        os.path.dirname(titles_all_valid[i][0]),  # путь до каталога исходного файла
-                        f"{file_name}{titles_all_valid[i][2]}"  # новое имя файла + исходное расширение
-                        )
-                  )
+        os.rename(
+            titles_all_valid[i][0],  # путь до исходного файла
+            os.path.join(
+                os.path.dirname(titles_all_valid[i][0]),  # путь до каталога исходного файла
+                f"{file_name}{titles_all_valid[i][2]}"  # новое имя файла + исходное расширение
+            ))
         log.info(f"{titles_all_valid[i][1]}{titles_all_valid[i][2]} --> {file_name}{titles_all_valid[i][2]}")
 
     log.info("Файлы переименованы.")
@@ -576,11 +572,16 @@ kl -l                                     --создает список list.doc
                         nargs="?",
                         const=os.getcwd(),
                         help="записывает теги в файл mp4 (или во все mp4 файлы в текущем каталоге)")
+    parser.add_argument("-kp",
+                        "--kinopoisk_id",
+                        nargs=1,
+                        help="указывает значение kinopoisk_id для записи в тег")
     parser.add_argument("--cleartags",
                         nargs="?",
                         const=os.getcwd(),
                         help="удаляет все теги в файле mp4 (или во всех mp4 файлах в текущем каталоге)")
-    parser.add_argument("-r", "--rename",
+    parser.add_argument("-r",
+                        "--rename",
                         nargs="?",
                         const=os.getcwd(),
                         help="переименовывает mp4 файлыв в текущем каталоге")
@@ -590,7 +591,6 @@ kl -l                                     --создает список list.doc
                         const=os.getcwd(),
                         help="создает список фильмов в формате docx из mp4 файлов в текущем каталоге")
 
-                        
     args = parser.parse_args()
 
     # определяем выходной файл
@@ -624,7 +624,6 @@ kl -l                                     --создает список list.doc
             make_docx(kp_codes[0], output, template, api, args.shorten)
         else:
             log.info("Список не создан.")
-            
 
     # список docx из параметров
     elif args.movie:
@@ -653,11 +652,14 @@ kl -l                                     --создает список list.doc
                 return
             name_list = []
             name_list.append(name)
-            kp_ids = find_kp_id(name_list, api)
-            if len(kp_ids[0]) == 0:
-                log.warning("Фильм не найден.")
-                return
-            kp_id = kp_ids[0][0]
+            if args.kinopoisk_id:
+                kp_id = args.kinopoisk_id[0]
+            else:
+                kp_ids = find_kp_id(name_list, api)
+                if len(kp_ids[0]) == 0:
+                    log.warning("Фильм не найден.")
+                    return
+                kp_id = kp_ids[0][0]
             film_info = get_film_info(kp_id, api)
             if not write_tags_to_mp4(film_info, path):
                 log.warning(f"Тег не записан в файл: {mp4_file}")
@@ -675,12 +677,17 @@ kl -l                                     --создает список list.doc
                 mp4_files_names.append(os.path.split(name)[1])
             for file in mp4_files_names:
                 log.info(f"Найден файл: {file}")
-            log.info(f"Всего найдено: {len(mp4_files)}")
+            log.info(f"Всего найдено файлов: {len(mp4_files)}")
 
             film_list = []
             for file in mp4_files:
                 film_list.append(os.path.splitext(os.path.basename(file))[0])
             kp_ids, films_not_found = find_kp_id(film_list, api)
+            if args.test:
+                if films_not_found:
+                    print("Следующие фильмы не найдены:")
+                    "\n".join(films_not_found)
+                return
             mp4_files_valid = []
             for i in range(len(mp4_files)):
                 if film_list[i] not in films_not_found:
