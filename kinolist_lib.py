@@ -542,7 +542,8 @@ kl -m \"Terminator\" \"Terminator 2\" KP~319  --создает список list
 kl -f movies.txt -o movies.docx           --создает список movies.docx из всех фильмов в файле movies.txt
 kl -t ./Terminator.mp4                    --записывает теги в файл Terminator.mp4 в текущем каталоге
 kl -t c:\movies\Terminator.mp4            --записывает теги в файл Terminator.mp4 в каталоге c:\movies
-kl --tag                                  --записывает теги во все mp4 файлы в текущем каталоге
+kl -t c:\movies\Chuzhie.mp4 -kp 406       --записывает файл Chuzhie.mp4 теги фильма Чужие (Kinopoisk_id 406)
+kl -t                                     --записывает теги во все mp4 файлы в текущем каталоге
 kl --cleartags                            --удаляет все теги во всех mp4 файлах в текущем каталоге
 kl -r *.mp4                               --переименовывает mp4 файлы в текущем каталоге (торрент -> название.mp4)
 kl -l                                     --создает список list.docx из всех mp4 файлов в текущем каталоге
