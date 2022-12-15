@@ -617,7 +617,7 @@ kl -l                                     --создает список list.doc
             for code in kp_codes[1]:
                 log.warning(f"Фильм не найден: {code}")
         if args.test:
-            log.info("Список не создан (тестовый режим)")
+            log.info(f"Найдено фильмов: {len(kp_codes[0])}, не найдено: {len(kp_codes[1])}")
             return
         if kp_codes[0]:
             template = "template.docx"
@@ -633,7 +633,7 @@ kl -l                                     --создает список list.doc
             for code in kp_codes[1]:
                 log.warning(f"Фильм не найден: {code}")
         if args.test:
-            log.info("Список не создан (тестовый режим)")
+            log.info(f"Найдено фильмов: {len(kp_codes[0])}, не найдено: {len(kp_codes[1])}")
             return
         if len(kp_codes[0]) == 0:
             log.warning("Фильмы не найдены.")
