@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.22"
+LIB_VER = "0.2.23"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
@@ -384,6 +384,19 @@ def write_all_films_to_docx(document, films: list, path: str):
         log.warning(f"Ошибка! Нет доступа к файлу {path}. Список не сохранен.")
         raise Exception
 
+def write_all_films_to_txt(file, films):
+    names = []
+    for film in films:
+        names.append(film[0])
+    list_to_file(file, names)
+
+       
+def list_to_file(file, list):
+    """Writes list to text file"""
+    with open(file, 'w', encoding="utf-8") as f:
+        for item in list:
+            f.write(item + "\n")
+
 
 def file_to_list(file: str):
     """Читает текстовый файл и возвращает список строк
@@ -458,12 +471,14 @@ def docx_to_pdf_libre(file_in):
     return code_exit
 
 
-def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool = False):
+def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool = False, txtlist: bool=False):
     file_path = get_resource_path(template)
     doc = Document(file_path)
     full_list = get_full_film_list(kp_id_list, api, shorten)
     write_all_films_to_docx(doc, full_list, output)
-
+    if txtlist:
+        txt_output = os.path.splitext(output)[0] + '.txt'
+        write_all_films_to_txt(txt_output, full_list)
 
 def rename_torrents(api: str, path=""):
     """Парсит имя из торрент файла и переименовывает в формат: название.ext
@@ -533,12 +548,12 @@ def main():
     import argparse
     from config import KINOPOISK_API_TOKEN as api
     parser = argparse.ArgumentParser(prog='Kinolist_Lib',
-                                     description='Библиотека для создания списков фильмов в формате docx.',
+                                     description=f'Библиотека для создания списков фильмов в формате docx. Версия {LIB_VER}.',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     epilog="""
+                                     epilog=R"""
 Примеры:
-kl -m \"Terminator\" \"Terminator 2\" KP~319  --создает список list.docx из 3 фильмов: Terminator,
-                                              Terminator 2 и Terminator 3 (*)
+kl -m "Terminator" "Terminator 2" KP~319  --создает список list.docx из 3 фильмов: Terminator,
+                                                Terminator 2 и Terminator 3 (*)
 kl -f movies.txt -o movies.docx           --создает список movies.docx из всех фильмов в файле movies.txt
 kl -t ./Terminator.mp4                    --записывает теги в файл Terminator.mp4 в текущем каталоге
 kl -t c:\movies\Terminator.mp4            --записывает теги в файл Terminator.mp4 в каталоге c:\movies
@@ -559,6 +574,9 @@ kl -l                                     --создает список list.doc
                         "--file",
                         nargs=1,
                         help="создает список фильмов в формате docx из текстового файла в формате txt")
+    parser.add_argument("--txtlist",
+                        action='store_true',
+                        help="дополнительно сохраняет текстовый список с названиями фильмов")
     parser.add_argument("-m", "--movie", nargs="+", help="создает список фильмов в формате docx из указанных фильмов")
     parser.add_argument("--test",
                         action='store_true',
@@ -622,7 +640,7 @@ kl -l                                     --создает список list.doc
             return
         if kp_codes[0]:
             template = "template.docx"
-            make_docx(kp_codes[0], output, template, api, args.shorten)
+            make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist)
         else:
             log.info("Список не создан.")
 
@@ -640,7 +658,7 @@ kl -l                                     --создает список list.doc
             log.warning("Фильмы не найдены.")
             return
         template = "template.docx"
-        make_docx(kp_codes[0], output, template, api, args.shorten)
+        make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist)
 
     # запись тегов в mp4
     elif args.tag:
@@ -752,7 +770,7 @@ kl -l                                     --создает список list.doc
         if len(films_not_found) > 0:
             log.warning("Следующие фильмы не найдены: " + ", ".join(films_not_found))
         template = "template.docx"
-        make_docx(kp_id, output, template, api, args.shorten)
+        make_docx(kp_id, output, template, api, args.shorten, args.txtlist)
 
     # переимонование torrent файлов
     elif args.rename:
