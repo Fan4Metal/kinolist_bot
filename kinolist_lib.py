@@ -303,7 +303,7 @@ def write_film_to_table(current_table, filminfo: list):
         filminfo (list): информация о фильме
     """
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
-    if filminfo[2] is None:
+    if filminfo[2] is None or filminfo[2] =="":
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'нет рейтинга')
     else:
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
@@ -376,7 +376,7 @@ def write_all_films_to_docx(document, films: list, path: str):
         log.info(f'Файл "{path}" создан.')
     except PermissionError:
         log.warning(f"Ошибка! Нет доступа к файлу {path}. Список не сохранен.")
-        raise Exception
+        raise Exception(f"Ошибка! Нет доступа к файлу {path}.")
 
 
 def write_all_films_to_txt(file, films):
@@ -440,7 +440,10 @@ def write_tags_to_mp4(film: list, file_path: str):
         bufferlist.append('')
         bufferlist.append(item)
     video["----:com.apple.iTunes:Actors"] = MP4FreeForm(("\r\n".join(bufferlist)).encode(), AtomDataType.UTF8)
-    video["----:com.apple.iTunes:kpra"] = MP4FreeForm((str(film[2])).encode(), AtomDataType.UTF8)
+    if film[2]:
+        video["----:com.apple.iTunes:kpra"] = MP4FreeForm((str(film[2])).encode(), AtomDataType.UTF8)
+    else:
+        video["----:com.apple.iTunes:kpra"] = MP4FreeForm(("").encode(), AtomDataType.UTF8)
     video["----:com.apple.iTunes:countr"] = MP4FreeForm((";".join(film[3])).encode(), AtomDataType.UTF8)
     video["----:com.apple.iTunes:kpid"] = MP4FreeForm((str(film[10])).encode(), AtomDataType.UTF8)
     video.save()
@@ -457,7 +460,10 @@ def read_tags_from_mp4(file_path: str):
     try:
         result.append(video["\xa9nam"][0])
         result.append(int(video["\xa9day"][0]))
-        result.append(float(video["----:com.apple.iTunes:kpra"][0].decode()))
+        if video["----:com.apple.iTunes:kpra"][0].decode():
+            result.append(float(video["----:com.apple.iTunes:kpra"][0].decode()))
+        else:
+            result.append("")
         result.append(video["----:com.apple.iTunes:countr"][0].decode().split(";"))
         result.append(video["desc"][0])
         result.append("")
@@ -467,8 +473,8 @@ def read_tags_from_mp4(file_path: str):
         result.append(Image.open(io.BytesIO(video["covr"][0])))
         result.append(video["----:com.apple.iTunes:kpid"][0].decode())
     except Exception as e:
-        log.error(f"Не удалось прочитать тег {e} из файла {os.path.basename(file_path)}!")
-        return
+        # log.error(f"Не удалось прочитать тег {e} из файла {os.path.basename(file_path)}!")
+        return None
     return result
 
 
@@ -802,9 +808,16 @@ kl -l                                     --создает список list.doc
         if len(mp4_files) == 0:
             log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
             return
+        for file in mp4_files:
+            log.info(f"Найден файл: {os.path.basename(file)}")
+        log.info(f"Всего: {len(mp4_files)}")
         full_films_list = []
         for file in mp4_files:
-            full_films_list.append(read_tags_from_mp4(file))
+            film_info = read_tags_from_mp4(file)
+            if film_info:
+                full_films_list.append(film_info)
+            else:
+                log.warning(f"Не удалось прочитать теги в файле: '{os.path.basename(file)}'! Файл пропущен.")
         if full_films_list:
             template = "template.docx"
             file_path = get_resource_path(template)
