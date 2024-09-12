@@ -23,9 +23,7 @@ import PTN
 LIB_VER = "0.2.23"
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,
-                        format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s',
-                        datefmt='%d.%m.%Y %H:%M:%S')
+    logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("Lib")
 
 
@@ -121,9 +119,7 @@ def find_kp_id(film_list: list, api: str):
         payload = {'keyword': film, 'page': 1}
         headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
         try:
-            r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword',
-                    headers=headers,
-                    params=payload)
+            r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
             if r.status_code == 200:
                 resp_json = r.json()
                 if resp_json['searchFilmsCountResult'] == 0:
@@ -245,17 +241,13 @@ def get_film_info(film_code, api, shorten=False):
     # Сокращение описания фильма
     if shorten:
         description = response_film.film.description.replace("\n\n", " ")
-        description = textwrap.shorten(description,
-                                       665,
-                                       fix_sentence_endings=True,
-                                       break_long_words=False,
-                                       placeholder='...')
+        description = textwrap.shorten(description, 665, fix_sentence_endings=True, break_long_words=False, placeholder='...')
     else:
         description = response_film.film.description
 
     film_list = [
-        film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries, description,
-        response_film.film.poster_url, response_film.film.poster_url_preview
+        film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries, description, response_film.film.poster_url,
+        response_film.film.poster_url_preview
     ]
     result = film_list
     result.append(directors_list)
@@ -385,13 +377,14 @@ def write_all_films_to_docx(document, films: list, path: str):
         log.warning(f"Ошибка! Нет доступа к файлу {path}. Список не сохранен.")
         raise Exception
 
+
 def write_all_films_to_txt(file, films):
     names = []
     for film in films:
         names.append(film[0])
     list_to_file(file, names)
 
-       
+
 def list_to_file(file, list):
     """Writes list to text file"""
     with open(file, 'w', encoding="utf-8") as f:
@@ -506,7 +499,7 @@ def docx_to_pdf_libre(file_in):
     return code_exit
 
 
-def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool = False, txtlist: bool=False):
+def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool = False, txtlist: bool = False):
     file_path = get_resource_path(template)
     doc = Document(file_path)
     full_list = get_full_film_list(kp_id_list, api, shorten)
@@ -514,6 +507,7 @@ def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: b
     if txtlist:
         txt_output = os.path.splitext(output)[0] + '.txt'
         write_all_films_to_txt(txt_output, full_list)
+
 
 def rename_torrents(api: str, path=""):
     """Парсит имя из торрент файла и переименовывает в формат: название.ext
@@ -592,7 +586,7 @@ kl -m "Terminator" "Terminator 2" KP~319  --создает список list.doc
 kl -f movies.txt -o movies.docx           --создает список movies.docx из всех фильмов в файле movies.txt
 kl -t ./Terminator.mp4                    --записывает теги в файл Terminator.mp4 в текущем каталоге
 kl -t c:\movies\Terminator.mp4            --записывает теги в файл Terminator.mp4 в каталоге c:\movies
-kl -t c:\movies\Chuzhie.mp4 -kp 406       --записывает файл Chuzhie.mp4 теги фильма Чужие (Kinopoisk_id 406)
+kl -t c:\movies\Chuzhie.mp4 -kp 406       --записывает в файл Chuzhie.mp4 теги фильма Чужие (Kinopoisk_id 406)
 kl -t                                     --записывает теги во все mp4 файлы в текущем каталоге
 kl --cleartags                            --удаляет все теги во всех mp4 файлах в текущем каталоге
 kl -r *.mp4                               --переименовывает mp4 файлы в текущем каталоге (торрент -> название.mp4)
@@ -605,40 +599,25 @@ kl -l                                     --создает список list.doc
                         action="version",
                         version=f"%(prog)s {LIB_VER}",
                         help="выводит версию программы и завершает работу")
-    parser.add_argument("-f",
-                        "--file",
-                        nargs=1,
-                        help="создает список фильмов в формате docx из текстового файла в формате txt")
-    parser.add_argument("--txtlist",
-                        action='store_true',
-                        help="дополнительно сохраняет текстовый список с названиями фильмов")
+    parser.add_argument("-f", "--file", nargs=1, help="создает список фильмов в формате docx из текстового файла в формате txt")
+    parser.add_argument("--txtlist", action='store_true', help="дополнительно сохраняет текстовый список с названиями фильмов")
     parser.add_argument("-m", "--movie", nargs="+", help="создает список фильмов в формате docx из указанных фильмов")
     parser.add_argument("--test",
                         action='store_true',
                         help="тестовый поиск фильмов без создания списка, работает с параметрами --file и --movie")
     parser.add_argument("-o", "--output", nargs=1, help="имя выходного файла (list.docx по умолчанию)")
-    parser.add_argument("-s",
-                        "--shorten",
-                        action='store_true',
-                        help="сокращает описания фильмов, чтобы поместились два фильма на странице")
+    parser.add_argument("-s", "--shorten", action='store_true', help="сокращает описания фильмов, чтобы поместились два фильма на странице")
     parser.add_argument("-t",
                         "--tag",
                         nargs="?",
                         const=os.getcwd(),
                         help="записывает теги в файл mp4 (или во все mp4 файлы в текущем каталоге)")
-    parser.add_argument("-kp",
-                        "--kinopoisk_id",
-                        nargs=1,
-                        help="указывает значение kinopoisk_id для записи в тег")
+    parser.add_argument("-kp", "--kinopoisk_id", nargs=1, help="указывает значение kinopoisk_id для записи в тег")
     parser.add_argument("--cleartags",
                         nargs="?",
                         const=os.getcwd(),
                         help="удаляет все теги в файле mp4 (или во всех mp4 файлах в текущем каталоге)")
-    parser.add_argument("-r",
-                        "--rename",
-                        nargs="?",
-                        const=os.getcwd(),
-                        help="переименовывает mp4 файлыв в текущем каталоге")
+    parser.add_argument("-r", "--rename", nargs="?", const=os.getcwd(), help="переименовывает mp4 файлыв в текущем каталоге")
     parser.add_argument("-l",
                         "--list",
                         nargs="?",
