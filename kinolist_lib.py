@@ -15,7 +15,7 @@ from docx.shared import Cm, Pt, RGBColor
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.film_request import FilmRequest
 from kinopoisk_unofficial.request.staff.staff_request import StaffRequest
-from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
+from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError, MP4FreeForm, AtomDataType
 from PIL import Image
 from tqdm import tqdm
 import PTN
@@ -208,6 +208,7 @@ def get_film_info(film_code, api, shorten=False):
                 7 - список режиссеров
                 8 - список актеров
                 9 - Постер размером 360x540 в формате PIL.Image.Image
+                10 - Kinopoisk_id
     '''
     api_client = KinopoiskApiClient(api)
     request_staff = StaffRequest(film_code)
@@ -450,6 +451,31 @@ def write_tags_to_mp4(film: list, file_path: str):
     video["----:com.apple.iTunes:kpid"] = MP4FreeForm((str(film[10])).encode(), AtomDataType.UTF8)
     video.save()
     return True
+
+
+def read_tags_from_mp4(file_path: str):
+    try:
+        video = MP4(file_path)
+    except MP4StreamInfoError as error:
+        log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
+        return False
+    result = []
+    try:
+        result.append(video["\xa9nam"][0])
+        result.append(int(video["\xa9day"][0]))
+        result.append(float(video["----:com.apple.iTunes:kpra"][0].decode()))
+        result.append(video["----:com.apple.iTunes:countr"][0].decode().split(";"))
+        result.append(video["desc"][0])
+        result.append("")
+        result.append("")
+        result.append(video["----:com.apple.iTunes:DIRECTOR"][0].decode().split(";"))
+        result.append(video["----:com.apple.iTunes:Actors"][0].decode().split("\r\n")[1::2])
+        result.append(Image.open(io.BytesIO(video["covr"][0])))
+        result.append(video["----:com.apple.iTunes:kpid"][0].decode())
+    except Exception as e:
+        log.error(f"Не удалось прочитать тег {e} из файла {os.path.basename(file_path)}!")
+        return
+    return result
 
 
 def clear_tags(file_path: str):
