@@ -269,6 +269,7 @@ def get_film_info(film_code, api, shorten=False):
         result.append(rgb_image)
     else:
         result.append("")
+    result.append(film_code)
     return result
 
 
@@ -623,6 +624,10 @@ kl -l                                     --создает список list.doc
                         nargs="?",
                         const=os.getcwd(),
                         help="создает список фильмов в формате docx из mp4 файлов в текущем каталоге")
+    parser.add_argument("--loc",
+                        nargs="?",
+                        const=os.getcwd(),
+                        help="создает список фильмов в формате docx из тегов mp4 файлов в текущем каталоге")
 
     args = parser.parse_args()
 
@@ -789,6 +794,24 @@ kl -l                                     --создает список list.doc
     # переимонование torrent файлов
     elif args.rename:
         rename_torrents(api, args.rename)
+
+    elif args.loc:
+        path = args.loc
+        log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
+        mp4_files = glob.glob(os.path.join(path, '*.mp4'))
+        if len(mp4_files) == 0:
+            log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
+            return
+        full_films_list = []
+        for file in mp4_files:
+            full_films_list.append(read_tags_from_mp4(file))
+        if full_films_list:
+            template = "template.docx"
+            file_path = get_resource_path(template)
+            doc = Document(file_path)
+            write_all_films_to_docx(doc, full_films_list, output)
+        else:
+            log.error("Ошибка, список не создан!")
 
 
 if __name__ == "__main__":
