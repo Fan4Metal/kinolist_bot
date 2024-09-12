@@ -439,6 +439,15 @@ def write_tags_to_mp4(film: list, file_path: str):
     if film[1]:
         video["\xa9day"] = str(film[1])  # year
     video["covr"] = [MP4Cover(image_to_file(film[9]).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
+    video["----:com.apple.iTunes:DIRECTOR"] = MP4FreeForm((";".join(film[7])).encode(), AtomDataType.UTF8)
+    bufferlist = []
+    for item in film[8]:
+        bufferlist.append('')
+        bufferlist.append(item)
+    video["----:com.apple.iTunes:Actors"] = MP4FreeForm(("\r\n".join(bufferlist)).encode(), AtomDataType.UTF8)
+    video["----:com.apple.iTunes:kpra"] = MP4FreeForm((str(film[2])).encode(), AtomDataType.UTF8)
+    video["----:com.apple.iTunes:countr"] = MP4FreeForm((";".join(film[3])).encode(), AtomDataType.UTF8)
+    video["----:com.apple.iTunes:kpid"] = MP4FreeForm((str(film[10])).encode(), AtomDataType.UTF8)
     video.save()
     return True
 
