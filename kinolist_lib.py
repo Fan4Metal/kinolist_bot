@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.23"
+LIB_VER = "0.2.24"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -303,7 +303,7 @@ def write_film_to_table(current_table, filminfo: list):
         filminfo (list): информация о фильме
     """
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
-    if filminfo[2] is None or filminfo[2] =="":
+    if filminfo[2] is None or filminfo[2] == "":
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'нет рейтинга')
     else:
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
