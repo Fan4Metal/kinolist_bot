@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.24"
+LIB_VER = "0.2.25 dev"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -583,7 +583,7 @@ def main():
     import argparse_ru
     import argparse
     from config import KINOPOISK_API_TOKEN as api
-    parser = argparse.ArgumentParser(prog='Kinolist_Lib',
+    parser = argparse.ArgumentParser(prog='kl',
                                      description=f'Библиотека для создания списков фильмов в формате docx. Версия {LIB_VER}.',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=R"""
@@ -604,7 +604,7 @@ kl -l                                     --создает список list.doc
     parser.add_argument("-ver",
                         "--version",
                         action="version",
-                        version=f"%(prog)s {LIB_VER}",
+                        version=f"Kinolist Lib {LIB_VER}",
                         help="выводит версию программы и завершает работу")
     parser.add_argument("-f", "--file", nargs=1, help="создает список фильмов в формате docx из текстового файла в формате txt")
     parser.add_argument("--txtlist", action='store_true', help="дополнительно сохраняет текстовый список с названиями фильмов")
@@ -803,6 +803,9 @@ kl -l                                     --создает список list.doc
 
     elif args.loc:
         path = args.loc
+        if not os.path.isdir(path):
+            log.error("Ошибка! В качестве параметра должен быть путь до каталога с файлами mp4.")
+            return
         log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
         mp4_files = glob.glob(os.path.join(path, '*.mp4'))
         if len(mp4_files) == 0:
@@ -825,6 +828,8 @@ kl -l                                     --создает список list.doc
             write_all_films_to_docx(doc, full_films_list, output)
         else:
             log.error("Ошибка, список не создан!")
+    else:
+        print(f"Kinolist Lib {LIB_VER}\nДля помощи используйте параметр --help")
 
 
 if __name__ == "__main__":
