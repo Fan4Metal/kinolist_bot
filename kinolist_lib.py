@@ -431,6 +431,9 @@ def write_tags_to_mp4(film: list, file_path: str):
     if film[4]:
         video["desc"] = film[4]  # description
         video["ldes"] = film[4]  # long description
+    else:
+        video["desc"] = " "  # description
+        video["ldes"] = " "  # long description
     if film[1]:
         video["\xa9day"] = str(film[1])  # year
     video["covr"] = [MP4Cover(image_to_file(film[9]).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
