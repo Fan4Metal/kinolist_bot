@@ -426,7 +426,11 @@ def write_tags_to_mp4(film: list, file_path: str):
     except MP4StreamInfoError as error:
         log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
         return False
-    video.delete()  # удаление всех тегов
+    try:
+        video.delete()  # удаление всех тегов
+    except Exception as error:
+        log.error(f"Ошибка при сохранении тегов в файл ({error}): {os.path.basename(file_path)}")
+        return False
     video["\xa9nam"] = film[0]  # title
     if film[4]:
         video["desc"] = film[4]  # description
@@ -747,8 +751,9 @@ kl -l                                     --создает список list.doc
             for i, film in enumerate(full_films_list):
                 if not write_tags_to_mp4(film, mp4_files_valid[i]):
                     log.warning(f"Тег не записан в файл: {os.path.basename(mp4_files_valid[i])}")
-                    return
-                log.info(f"Записан тег в файл: {os.path.basename(mp4_files_valid[i])}")
+                    continue
+                else:
+                    log.info(f"Записан тег в файл: {os.path.basename(mp4_files_valid[i])}")
         else:
             log.error("Неверно указан путь.")
 
