@@ -449,7 +449,11 @@ def write_tags_to_mp4(film: list, file_path: str):
         video["----:com.apple.iTunes:kpra"] = MP4FreeForm(("").encode(), AtomDataType.UTF8)
     video["----:com.apple.iTunes:countr"] = MP4FreeForm((";".join(film[3])).encode(), AtomDataType.UTF8)
     video["----:com.apple.iTunes:kpid"] = MP4FreeForm((str(film[10])).encode(), AtomDataType.UTF8)
-    video.save()
+    try:
+        video.save()
+    except Exception as error:
+        log.error(f"Ошибка при сохранении тегов в файл ({error}): {os.path.basename(file_path)}")
+        return False
     return True
 
 
