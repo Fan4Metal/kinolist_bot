@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.27"
+LIB_VER = "0.2.28"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -464,7 +464,7 @@ def write_tags_to_mp4(film: list, file_path: str):
 def read_tags_from_mp4(file_path: str):
     try:
         video = MP4(file_path)
-    except MP4StreamInfoError as error:
+    except Exception as error:
         log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
         return False
     result = []
