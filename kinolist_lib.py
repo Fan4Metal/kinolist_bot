@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.28"
+LIB_VER = "0.2.28 IMDB Test"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -305,6 +305,8 @@ def write_film_to_table(current_table, filminfo: list):
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
     if filminfo[2] is None or filminfo[2] == "":
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'нет рейтинга')
+    elif filminfo[2][0] == "i":
+        run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'IMDB ' + str(filminfo[2][1:]))
     else:
         run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
     run.font.name = 'Arial'
@@ -472,7 +474,7 @@ def read_tags_from_mp4(file_path: str):
         result.append(video["\xa9nam"][0])
         result.append(int(video["\xa9day"][0]))
         if video["----:com.apple.iTunes:kpra"][0].decode():
-            result.append(float(video["----:com.apple.iTunes:kpra"][0].decode()))
+            result.append(video["----:com.apple.iTunes:kpra"][0].decode())
         else:
             result.append("")
         result.append(video["----:com.apple.iTunes:countr"][0].decode().split(";"))
