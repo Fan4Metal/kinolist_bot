@@ -303,7 +303,7 @@ def write_film_to_table(current_table, filminfo: list):
         filminfo (list): информация о фильме
     """
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
-    if filminfo[2] is None or filminfo[2] == "":
+    if filminfo[2] == "" or filminfo[2] == "None":
         run = paragraph.add_run(filminfo[0] + ' - ' + 'нет рейтинга')
     elif filminfo[2][0] == "i":
         run = paragraph.add_run(filminfo[0] + ' - ' + 'IMDB ' + filminfo[2][1:])
