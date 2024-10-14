@@ -377,8 +377,7 @@ def write_all_films_to_docx(document, films: list, path: str):
         document.save(path)
         log.info(f'Файл "{path}" создан.')
     except PermissionError:
-        log.warning(f"Ошибка! Нет доступа к файлу {path}. Список не сохранен.")
-        raise Exception(f"Ошибка! Нет доступа к файлу {path}.")
+        log.error(f"Ошибка! Нет доступа на запись к файлу {path}. Список не сохранен.")
 
 
 def write_all_films_to_txt(file, films):
