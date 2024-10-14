@@ -472,12 +472,21 @@ def read_tags_from_mp4(file_path: str):
     try:
         result.append(video["\xa9nam"][0])
         result.append(int(video["\xa9day"][0]))
-        if video["----:com.apple.iTunes:kpra"][0].decode():
-            result.append(video["----:com.apple.iTunes:kpra"][0].decode())
-        else:
+        try:
+            if video["----:com.apple.iTunes:kpra"][0].decode():
+                result.append(video["----:com.apple.iTunes:kpra"][0].decode())
+            else:
+                result.append("")
+        except:
             result.append("")
         result.append(video["----:com.apple.iTunes:countr"][0].decode().split(";"))
-        result.append(video["desc"][0])
+        try:
+            if video["desc"][0]:
+                result.append(video["desc"][0])
+            else:
+                result.append("")
+        except:
+            result.append("")
         result.append("")
         result.append("")
         result.append(video["----:com.apple.iTunes:DIRECTOR"][0].decode().split(";"))
@@ -485,7 +494,6 @@ def read_tags_from_mp4(file_path: str):
         result.append(Image.open(io.BytesIO(video["covr"][0])))
         result.append(video["----:com.apple.iTunes:kpid"][0].decode())
     except Exception as e:
-        # log.error(f"Не удалось прочитать тег {e} из файла {os.path.basename(file_path)}!")
         return None
     return result
 
