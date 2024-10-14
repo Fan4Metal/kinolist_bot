@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.29"
+LIB_VER = "0.2.30"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -244,9 +244,9 @@ def get_film_info(film_code, api, shorten=False):
         description = textwrap.shorten(description, 665, fix_sentence_endings=True, break_long_words=False, placeholder='...')
     else:
         description = response_film.film.description
-
     film_list = [
-        film_name, response_film.film.year, response_film.film.rating_kinopoisk, countries, description, response_film.film.poster_url,
+        film_name, response_film.film.year,
+        str(response_film.film.rating_kinopoisk), countries, description, response_film.film.poster_url,
         response_film.film.poster_url_preview
     ]
     result = film_list
@@ -304,11 +304,11 @@ def write_film_to_table(current_table, filminfo: list):
     """
     paragraph = current_table.cell(0, 1).paragraphs[0]  # название фильма + рейтинг
     if filminfo[2] is None or filminfo[2] == "":
-        run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'нет рейтинга')
+        run = paragraph.add_run(filminfo[0] + ' - ' + 'нет рейтинга')
     elif filminfo[2][0] == "i":
-        run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'IMDB ' + str(filminfo[2][1:]))
+        run = paragraph.add_run(filminfo[0] + ' - ' + 'IMDB ' + filminfo[2][1:])
     else:
-        run = paragraph.add_run(str(filminfo[0]) + ' - ' + 'Кинопоиск ' + str(filminfo[2]))
+        run = paragraph.add_run(filminfo[0] + ' - ' + 'Кинопоиск ' + filminfo[2])
     run.font.name = 'Arial'
     run.font.size = Pt(11)
     run.font.bold = True
@@ -450,7 +450,7 @@ def write_tags_to_mp4(film: list, file_path: str):
         bufferlist.append(item)
     video["----:com.apple.iTunes:Actors"] = MP4FreeForm(("\r\n".join(bufferlist)).encode(), AtomDataType.UTF8)
     if film[2]:
-        video["----:com.apple.iTunes:kpra"] = MP4FreeForm((str(film[2])).encode(), AtomDataType.UTF8)
+        video["----:com.apple.iTunes:kpra"] = MP4FreeForm(film[2].encode(), AtomDataType.UTF8)
     else:
         video["----:com.apple.iTunes:kpra"] = MP4FreeForm(("").encode(), AtomDataType.UTF8)
     video["----:com.apple.iTunes:countr"] = MP4FreeForm((";".join(film[3])).encode(), AtomDataType.UTF8)
@@ -612,11 +612,11 @@ kl -t c:\movies                           --записывает теги во �
 kl --cleartags                            --удаляет все теги во всех mp4 файлах в текущем каталоге
 kl -r *.mp4                               --переименовывает mp4 файлы в текущем каталоге (торрент -> название.mp4)
 kl -l                                     --создает список list.docx из всех mp4 файлов в текущем каталоге.
-kl --loc                                  --создает список list.docx из всех mp4 файлов в текущем каталоге, используя только
-                                                теги файлов (все теги должны быть предварительно записаны в файл). Начиная с
-                                                версии 0.2.24 все необходимые данные для создания списка добавляются в теги файла.
-                                                Рейтинг в теге kpra, начинающийся с "i" (например: i6.7) интерпретируются как
-                                                рейтинг IMDB.
+kl --loc                                  --создает список list.docx из всех mp4 файлов в текущем каталоге, используя
+                                                только теги файлов (все теги должны быть предварительно записаны в
+                                                файл). Начиная с версии 0.2.24 все необходимые данные для создания
+                                                списка добавляются в теги файла. Рейтинг в теге kpra, начинающийся с "i"
+                                                (например: i6.7) интерпретируются как рейтинг IMDB.
 
 
 * Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названии фильма (где XXX - Kinopoisk_id)
