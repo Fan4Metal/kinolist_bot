@@ -306,7 +306,7 @@ def write_film_to_table(current_table, filminfo: list):
     if filminfo[2] == "" or filminfo[2] == "None":
         run = paragraph.add_run(filminfo[0] + ' - ' + 'нет рейтинга')
     elif filminfo[2][0] == "i":
-        run = paragraph.add_run(filminfo[0] + ' - ' + 'IMDB ' + filminfo[2][1:])
+        run = paragraph.add_run(filminfo[0] + ' - ' + 'IMDb ' + filminfo[2][1:])
     else:
         run = paragraph.add_run(filminfo[0] + ' - ' + 'Кинопоиск ' + filminfo[2])
     run.font.name = 'Arial'
@@ -623,7 +623,7 @@ kl --loc                                  --создает список list.doc
                                                 только теги файлов (все теги должны быть предварительно записаны в
                                                 файл). Начиная с версии 0.2.24 все необходимые данные для создания
                                                 списка добавляются в теги файла. Рейтинг в теге kpra, начинающийся с "i"
-                                                (например: i6.7) интерпретируется как рейтинг IMDB.
+                                                (например: i6.7) интерпретируется как рейтинг IMDb.
 
 
 * Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названии фильма (где XXX - Kinopoisk_id)
