@@ -20,7 +20,7 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 
-LIB_VER = "0.2.30"
+LIB_VER = "0.2.31"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -244,9 +244,12 @@ def get_film_info(film_code, api, shorten=False):
         description = textwrap.shorten(description, 665, fix_sentence_endings=True, break_long_words=False, placeholder='...')
     else:
         description = response_film.film.description
+    if response_film.film.rating_kinopoisk:
+        rating = str(response_film.film.rating_kinopoisk)
+    else:
+        rating = ""
     film_list = [
-        film_name, response_film.film.year,
-        str(response_film.film.rating_kinopoisk), countries, description, response_film.film.poster_url,
+        film_name, response_film.film.year, rating, countries, description, response_film.film.poster_url,
         response_film.film.poster_url_preview
     ]
     result = film_list
