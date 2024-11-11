@@ -19,8 +19,9 @@ from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError, MP4FreeForm, AtomData
 from PIL import Image
 from tqdm import tqdm
 import PTN
+import win32com.client
 
-LIB_VER = "0.2.31"
+LIB_VER = "0.2.32"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -57,6 +58,12 @@ def get_resource_path(relative_path):
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
+
+def get_target(lnk):
+    shell = win32com.client.Dispatch("WScript.Shell")
+    shortcut = shell.CreateShortCut(lnk)
+    return shortcut.Targetpath
 
 
 def copy_table_after(table, paragraph):
@@ -838,7 +845,11 @@ kl --loc                                  --создает список list.doc
             log.error("Ошибка! В качестве параметра должен быть путь до каталога с файлами mp4.")
             return
         log.info(f"Поиск файлов mp4 в каталоге: {os.path.abspath(path)}")
-        mp4_files = glob.glob(os.path.join(path, '*.mp4'))
+        mp4_files_in_dir = glob.glob(os.path.join(path, '*.mp4'))
+        lnk_files_in_dir = glob.glob(os.path.join(path, '*.lnk'))
+        mp4_files_from_lnk = [get_target(x) for x in lnk_files_in_dir if os.path.splitext(get_target(x))[1] == ".mp4"]
+        mp4_files = mp4_files_in_dir + mp4_files_from_lnk
+        mp4_files.sort(key=os.path.basename)
         if len(mp4_files) == 0:
             log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
             return
