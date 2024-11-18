@@ -21,7 +21,7 @@ from tqdm import tqdm
 import PTN
 import win32com.client
 
-LIB_VER = "0.2.32"
+LIB_VER = "0.2.33"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -554,42 +554,55 @@ def rename_torrents(api: str, path=""):
         path (str, optional): путь до файла. По умолчанию "".
     """
     files_paths = glob.glob(path)
-    if len(files_paths) == 0:
+    if not files_paths:
         log.warning("Файлы не найдены.")
         return
 
-    titles_all = []  # список кортежей (полный путь, имя файла, расширение)
-    titles_parsed = []  # список распознанных парсером имен
+    all_data = []
     for file in files_paths:
+        log.info('Поиск названия фильма в имени файла: ' + os.path.basename(file))
+        data = {}
+        data['source_path'] = file
         base_name = os.path.basename(file)
-        tuple = (file, os.path.splitext(base_name)[0], os.path.splitext(base_name)[1])
-        titles_all.append(tuple)
-        titles_parsed.append(PTN.parse(base_name)['title'])
-
-    id_list, films_not_found = find_kp_id(titles_parsed, api)
-    if len(id_list) == 0:
-        log.warning("Фильмы не найдены.")
-        return
-
-    titles_all_valid = []  # список кортежей (полный путь, имя файла, расширение) с только найденными фильмами
-    for i in range(len(titles_all)):
-        if titles_parsed[i] not in films_not_found:
-            titles_all_valid.append(titles_all[i])
-
-    films_info = get_full_film_list(id_list, api)
-
-    for i, film in enumerate(films_info):
-        trtable = film[0].maketrans('', '', '\/:*?"<>')
-        file_name = film[0].translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
-        os.rename(
-            titles_all_valid[i][0],  # путь до исходного файла
-            os.path.join(
-                os.path.dirname(titles_all_valid[i][0]),  # путь до каталога исходного файла
-                f"{file_name}{titles_all_valid[i][2]}"  # новое имя файла + исходное расширение
-            ))
-        log.info(f"{titles_all_valid[i][1]}{titles_all_valid[i][2]} --> {file_name}{titles_all_valid[i][2]}")
-
-    log.info("Файлы переименованы.")
+        name, ext = os.path.splitext(base_name)
+        parsed_data = PTN.parse(name)
+        if 'title' in parsed_data:
+            title = parsed_data['title']
+        else:
+            title = ""
+        if title:
+            kp = find_kp_id2(f'{title}', api)
+            if kp:
+                _, kp_title, kp_year = kp
+            else:
+                log.info(f'Не найдено название фильма в имени файла: {base_name}')
+                continue
+        else:
+            log.info(f'Не найдено название фильма в имени файла: {base_name}')
+            continue
+        trtable = kp_title.maketrans('', '', '\/:*?"<>')
+        kp_title_filtered = kp_title.translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
+        data['dest_path'] = os.path.join(os.path.dirname(file), f'{kp_title_filtered} ({kp_year}){ext}')
+        all_data.append(data)
+        time.sleep(0.2)
+        
+    print("")
+    print('Будут переименованы файлы:')
+    for i, item in enumerate(all_data, start=1):
+        print(f'{i:2d}:', item['source_path'], '->', item['dest_path'])
+    
+    print("")
+    if input('Продолжить? [y/n] ').lower() == 'y':
+        for item in all_data:
+            try:
+                os.rename(item['source_path'], item['dest_path'])
+                log.info(f'Переименование файла: {item["source_path"]} -> {item["dest_path"]}')
+            except Exception as e:
+                log.error(f'Ошибка переименования файла: {item["source_path"]} -> {item["dest_path"]}')
+                log.error(e)
+        log.info("Файлы переименованы.")
+    else:
+        log.info('Отмена переименования файлов.')
 
 
 def text_to_markdown(text: str) -> str:
