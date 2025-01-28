@@ -390,6 +390,46 @@ def write_all_films_to_docx(document, films: list, path: str):
         log.error(f'Ошибка! Нет доступа на запись к файлу "{path}". Список не сохранен.')
 
 
+def write_all_films_to_docx_newformat(films: list, path: str):
+    """Записывает информацию о фильмах в формате docx в новом формате."""
+
+    # Создаем новый документ
+    doc = Document()
+
+    section = doc.sections[0]
+
+    section.page_width = Cm(21.0)  # Ширина страницы: 21,0 см
+    section.page_height = Cm(29.7)  # Высота страницы: 29,7 см
+
+    section.left_margin = Cm(2)
+    section.right_margin = Cm(1.5)
+    section.top_margin = Cm(1.5)
+    section.bottom_margin = Cm(1.5)
+
+    # Устанавливаем шрифт по умолчанию для документа (Times New Roman)
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Times New Roman'
+    font.size = Pt(14)
+
+    for film in films:
+        # Создаем параграф с нумерованным списком
+        paragraph = doc.add_paragraph(style='List Number')
+
+        # Добавляем название и год (жирный шрифт)
+        run = paragraph.add_run(f"{film[0]} ({film[1]})")
+        run.bold = True
+
+        # Добавляем остальной текст (обычный шрифт)
+        run = paragraph.add_run(f" {'Режиссеры' if len(film[7]) > 1 else 'Режиссер'}: {', '.join(film[7])}")
+        run.bold = False
+        run = paragraph.add_run(f" В главных ролях: {', '.join(film[8][:3])}")
+        run.bold = False
+
+    # Сохраняем документ
+    doc.save(path)
+
+
 def write_all_films_to_txt(file, films):
     names = []
     for film in films:
@@ -585,12 +625,12 @@ def rename_torrents(api: str, path=""):
         data['dest_path'] = os.path.join(os.path.dirname(file), f'{kp_title_filtered} ({kp_year}){ext}')
         all_data.append(data)
         time.sleep(0.2)
-        
+
     print("")
     print('Будут переименованы файлы:')
     for i, item in enumerate(all_data, start=1):
         print(f'{i:2d}:', item['source_path'], '->', item['dest_path'])
-    
+
     print("")
     if input('Продолжить? [y/n] ').lower() == 'y':
         for item in all_data:
@@ -877,10 +917,11 @@ kl --loc                                  --создает список list.doc
             else:
                 log.warning(f"Не удалось прочитать теги в файле: '{os.path.basename(file)}'! Файл пропущен.")
         if full_films_list:
-            template = "template.docx"
-            file_path = get_resource_path(template)
-            doc = Document(file_path)
-            write_all_films_to_docx(doc, full_films_list, output)
+            # template = "template.docx"
+            # file_path = get_resource_path(template)
+            # doc = Document(file_path)
+            # write_all_films_to_docx(doc, full_films_list, output)
+            write_all_films_to_docx_newformat(full_films_list, output)
         else:
             log.error("Ошибка, список не создан!")
     else:
