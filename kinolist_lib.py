@@ -579,11 +579,20 @@ def docx_to_pdf_libre(file_in):
     return code_exit
 
 
-def make_docx(kp_id_list: list, output: str, template: str, api: str, shorten: bool = False, txtlist: bool = False):
-    file_path = get_resource_path(template)
-    doc = Document(file_path)
+def make_docx(kp_id_list: list,
+              output: str,
+              template: str,
+              api: str,
+              shorten: bool = False,
+              txtlist: bool = False,
+              newformat: bool = False):
     full_list = get_full_film_list(kp_id_list, api, shorten)
-    write_all_films_to_docx(doc, full_list, output)
+    if newformat:
+        write_all_films_to_docx_newformat(full_list, output)
+    else:
+        file_path = get_resource_path(template)
+        doc = Document(file_path)
+        write_all_films_to_docx(doc, full_list, output)
     if txtlist:
         txt_output = os.path.splitext(output)[0] + '.txt'
         write_all_films_to_txt(txt_output, full_list)
@@ -727,6 +736,7 @@ kl --loc                                  --создает список list.doc
                         nargs="?",
                         const=os.getcwd(),
                         help="создает список фильмов в формате docx из тегов mp4 файлов в текущем каталоге")
+    parser.add_argument("-nf", "--newformat", action='store_true', help="модификатор для создания списка фильмов в новом формате")
 
     args = parser.parse_args()
 
@@ -758,7 +768,7 @@ kl --loc                                  --создает список list.doc
             return
         if kp_codes[0]:
             template = "template.docx"
-            make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist)
+            make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat)
         else:
             log.info("Список не создан.")
 
@@ -776,7 +786,7 @@ kl --loc                                  --создает список list.doc
             log.warning("Фильмы не найдены.")
             return
         template = "template.docx"
-        make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist)
+        make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat)
 
     # запись тегов в mp4
     elif args.tag:
@@ -889,7 +899,7 @@ kl --loc                                  --создает список list.doc
         if len(films_not_found) > 0:
             log.warning("Следующие фильмы не найдены: " + ", ".join(films_not_found))
         template = "template.docx"
-        make_docx(kp_id, output, template, api, args.shorten, args.txtlist)
+        make_docx(kp_id, output, template, api, args.shorten, args.txtlist, args.newformat)
 
     # переимонование torrent файлов
     elif args.rename:
@@ -920,11 +930,13 @@ kl --loc                                  --создает список list.doc
             else:
                 log.warning(f"Не удалось прочитать теги в файле: '{os.path.basename(file)}'! Файл пропущен.")
         if full_films_list:
-            # template = "template.docx"
-            # file_path = get_resource_path(template)
-            # doc = Document(file_path)
-            # write_all_films_to_docx(doc, full_films_list, output)
-            write_all_films_to_docx_newformat(full_films_list, output)
+            if args.newformat:
+                write_all_films_to_docx_newformat(full_films_list, output)
+            else:
+                template = "template.docx"
+                file_path = get_resource_path(template)
+                doc = Document(file_path)
+                write_all_films_to_docx(doc, full_films_list, output)
         else:
             log.error("Ошибка, список не создан!")
     else:
