@@ -403,8 +403,8 @@ def write_all_films_to_docx_newformat(films: list, path: str):
 
     section.left_margin = Cm(2)
     section.right_margin = Cm(1.5)
-    section.top_margin = Cm(1.5)
-    section.bottom_margin = Cm(1.5)
+    section.top_margin = Cm(1.75)
+    section.bottom_margin = Cm(2)
 
     # Устанавливаем шрифт по умолчанию для документа (Times New Roman)
     style = doc.styles['Normal']
@@ -412,18 +412,21 @@ def write_all_films_to_docx_newformat(films: list, path: str):
     font.name = 'Times New Roman'
     font.size = Pt(14)
 
-    for film in films:
+    for num, film in enumerate(films, start=1):
         # Создаем параграф с нумерованным списком
-        paragraph = doc.add_paragraph(style='List Number')
+        # paragraph = doc.add_paragraph(style='List Number')
+        paragraph = doc.add_paragraph()
+        paragraph_format = paragraph.paragraph_format
+        paragraph_format.space_after = Pt(12)
 
         # Добавляем название и год (жирный шрифт)
-        run = paragraph.add_run(f"{film[0]} ({film[1]})")
+        run = paragraph.add_run(f"{num}. {film[0]} ({film[1]})")
         run.bold = True
 
         # Добавляем остальной текст (обычный шрифт)
-        run = paragraph.add_run(f" {'Режиссеры' if len(film[7]) > 1 else 'Режиссер'}: {', '.join(film[7])}")
+        run = paragraph.add_run(f" {'Режиссеры' if len(film[7]) > 1 else 'Режиссер'}: {', '.join(film[7])}\n")
         run.bold = False
-        run = paragraph.add_run(f" В главных ролях: {', '.join(film[8][:3])}")
+        run = paragraph.add_run(f"Актеры: {', '.join(film[8][:3])}")
         run.bold = False
 
     # Сохраняем документ
