@@ -21,7 +21,7 @@ from tqdm import tqdm
 import PTN
 import win32com.client
 
-LIB_VER = "0.2.33"
+LIB_VER = "0.2.34"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -419,8 +419,10 @@ def write_all_films_to_docx_newformat(films: list, path: str):
         paragraph_format = paragraph.paragraph_format
         paragraph_format.space_after = Pt(12)
 
-        # Добавляем название и год (жирный шрифт)
-        run = paragraph.add_run(f"{num}. {film[0]} ({film[1]})")
+        # Добавляем номер, название и год (жирный шрифт)
+        run = paragraph.add_run(f"{num}. ")
+        run.bold = False
+        run = paragraph.add_run(f"{film[0]} ({film[1]})")
         run.bold = True
 
         # Добавляем остальной текст (обычный шрифт)
