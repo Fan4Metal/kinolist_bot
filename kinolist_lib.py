@@ -350,7 +350,7 @@ def get_full_film_list(film_codes: list, api: str, shorten=False):
     return full_films_list
 
 
-def write_film_to_table(current_table, filminfo: list):
+def write_film_to_table(current_table, filminfo: list, genres: bool = False):
     """Заполнение таблицы в файле docx.
 
     Args:
@@ -386,6 +386,18 @@ def write_film_to_table(current_table, filminfo: list):
     run.font.name = 'Arial'
     run.font.size = Pt(10)
 
+    if genres:
+        try:
+            if filminfo[12]:
+                paragraph = current_table.cell(1, 1).add_paragraph()
+                run = paragraph.add_run(f"Жанр: {filminfo[12]}")
+                run.font.name = 'Arial'
+                run.font.size = Pt(10)
+            else:
+                pass
+        except IndexError:
+            pass
+
     paragraph = current_table.cell(1, 1).add_paragraph()
 
     paragraph = current_table.cell(1, 1).add_paragraph()  # в главных ролях
@@ -413,7 +425,7 @@ def write_film_to_table(current_table, filminfo: list):
     run.add_picture(image_to_file(filminfo[9]), width=Cm(7))
 
 
-def write_all_films_to_docx(document, films: list, path: str):
+def write_all_films_to_docx(document, films: list, path: str, genres: bool = False):
     """Записывает информацию о фильмах в таблицы файла docx
 
     Args:
@@ -427,7 +439,7 @@ def write_all_films_to_docx(document, films: list, path: str):
         clone_first_table(document, table_num - 1)
     for i in tqdm(range(table_num), desc="Запись в таблицу...      "):
         current_table = document.tables[i]
-        write_film_to_table(current_table, films[i])
+        write_film_to_table(current_table, films[i], genres)
     try:
         document.save(path)
         log.info(f'Файл "{path}" создан.')
@@ -435,7 +447,7 @@ def write_all_films_to_docx(document, films: list, path: str):
         log.error(f'Ошибка! Нет доступа на запись к файлу "{path}". Список не сохранен.')
 
 
-def write_all_films_to_docx_newformat(films: list, path: str):
+def write_all_films_to_docx_newformat(films: list, path: str, genres: bool = False):
     """Записывает информацию о фильмах в формате docx в новом формате."""
 
     # Создаем новый документ
@@ -467,11 +479,21 @@ def write_all_films_to_docx_newformat(films: list, path: str):
         # Добавляем номер, название и год (жирный шрифт)
         run = paragraph.add_run(f"{num}. ")
         run.bold = False
-        run = paragraph.add_run(f"{film[0]} ({film[1]})")
+        run = paragraph.add_run(f"{film[0]} ({film[1]}) ")
         run.bold = True
 
+        if genres:
+            try:
+                if film[12]:
+                    run = paragraph.add_run(f"Жанр: {film[12]}\n")
+                    run.bold = False
+                else:
+                    pass
+            except IndexError:
+                pass
+
         # Добавляем остальной текст (обычный шрифт)
-        run = paragraph.add_run(f" {'Режиссеры' if len(film[7]) > 1 else 'Режиссер'}: {', '.join(film[7])}\n")
+        run = paragraph.add_run(f"{'Режиссеры' if len(film[7]) > 1 else 'Режиссер'}: {', '.join(film[7])}\n")
         run.bold = False
         run = paragraph.add_run(f"Актеры: {', '.join(film[8][:3])}")
         run.bold = False
@@ -641,14 +663,15 @@ def make_docx(kp_id_list: list,
               api: str,
               shorten: bool = False,
               txtlist: bool = False,
-              newformat: bool = False):
+              newformat: bool = False,
+              genres: bool = False):
     full_list = get_full_film_list(kp_id_list, api, shorten)
     if newformat:
-        write_all_films_to_docx_newformat(full_list, output)
+        write_all_films_to_docx_newformat(full_list, output, genres)
     else:
         file_path = get_resource_path(template)
         doc = Document(file_path)
-        write_all_films_to_docx(doc, full_list, output)
+        write_all_films_to_docx(doc, full_list, output, genres)
     if txtlist:
         txt_output = os.path.splitext(output)[0] + '.txt'
         write_all_films_to_txt(txt_output, full_list)
@@ -793,6 +816,7 @@ kl --loc                                  --создает список list.doc
                         const=os.getcwd(),
                         help="создает список фильмов в формате docx из тегов mp4 файлов в текущем каталоге")
     parser.add_argument("-nf", "--newformat", action='store_true', help="модификатор для создания списка фильмов в новом формате")
+    parser.add_argument("-g", "--genres", action='store_true', help="модификатор добавляет жанры в список фильмов")
 
     args = parser.parse_args()
 
@@ -824,7 +848,7 @@ kl --loc                                  --создает список list.doc
             return
         if kp_codes[0]:
             template = "template.docx"
-            make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat)
+            make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat, args.genres)
         else:
             log.info("Список не создан.")
 
@@ -842,7 +866,7 @@ kl --loc                                  --создает список list.doc
             log.warning("Фильмы не найдены.")
             return
         template = "template.docx"
-        make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat)
+        make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat, args.genres)
 
     # запись тегов в mp4
     elif args.tag:
@@ -955,7 +979,7 @@ kl --loc                                  --создает список list.doc
         if len(films_not_found) > 0:
             log.warning("Следующие фильмы не найдены: " + ", ".join(films_not_found))
         template = "template.docx"
-        make_docx(kp_id, output, template, api, args.shorten, args.txtlist, args.newformat)
+        make_docx(kp_id, output, template, api, args.shorten, args.txtlist, args.newformat, args.genres)
 
     # переимонование torrent файлов
     elif args.rename:
@@ -987,12 +1011,12 @@ kl --loc                                  --создает список list.doc
                 log.warning(f"Не удалось прочитать теги в файле: '{os.path.basename(file)}'! Файл пропущен.")
         if full_films_list:
             if args.newformat:
-                write_all_films_to_docx_newformat(full_films_list, output)
+                write_all_films_to_docx_newformat(full_films_list, output, genres=args.genres)
             else:
                 template = "template.docx"
                 file_path = get_resource_path(template)
                 doc = Document(file_path)
-                write_all_films_to_docx(doc, full_films_list, output)
+                write_all_films_to_docx(doc, full_films_list, output, genres=args.genres)
         else:
             log.error("Ошибка, список не создан!")
     else:
