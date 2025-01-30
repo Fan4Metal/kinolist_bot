@@ -27,6 +27,40 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("Lib")
 
+genres_hierarchy = [
+    "мультфильм",
+    "мюзикл",
+    "ужасы",
+    "фантастика",
+    "фэнтези",
+    "военный",
+    "история",
+    "приключения",
+    "боевик",
+    "триллер",
+    "детектив",
+    "комедия",
+    "мелодрама",
+    "драма",
+]
+
+
+def get_main_genre(genres: list, genres_hierarchy: list) -> str:
+    """Опреде """
+    if not genres:
+        raise ValueError("Список жанров не может быть пустым.")
+
+    # Преобразуем genres в set для быстрого поиска
+    genres_set = set(genres)
+
+    # Ищем первый жанр из иерархии, который есть в genres
+    for genre in genres_hierarchy:
+        if genre in genres_set:
+            return genre
+
+    # Если ничего не найдено, возвращаем первый жанр из списка genres
+    return genres[0]
+
 
 def is_api_ok(api):
     '''Проверка авторизации.'''
@@ -196,7 +230,7 @@ def find_kp_id2(film: str, api: str):
         return result
 
 
-def get_film_info(film_code, api, shorten=False):
+def get_film_info(film_code: int, api, shorten=False):
     '''
     Получение информации о фильме с помощью kinopoisk_api_client.
 
@@ -212,6 +246,8 @@ def get_film_info(film_code, api, shorten=False):
                 8 - список актеров
                 9 - Постер размером 360x540 в формате PIL.Image.Image
                 10 - Kinopoisk_id
+                11 - Жанры фильма
+                12 - Основной жанр
     '''
     api_client = KinopoiskApiClient(api)
     request_staff = StaffRequest(film_code)
@@ -255,6 +291,7 @@ def get_film_info(film_code, api, shorten=False):
         rating = str(response_film.film.rating_kinopoisk)
     else:
         rating = ""
+
     film_list = [
         film_name, response_film.film.year, rating, countries, description, response_film.film.poster_url,
         response_film.film.poster_url_preview
@@ -262,6 +299,7 @@ def get_film_info(film_code, api, shorten=False):
     result = film_list
     result.append(directors_list)
     result.append(staff_list)
+
     # загрузка постера
     cover_url = response_film.film.poster_url
     cover = get(cover_url, stream=True)
@@ -280,6 +318,13 @@ def get_film_info(film_code, api, shorten=False):
     else:
         result.append("")
     result.append(film_code)
+
+    # Добавляем информацию о жанрах фильма
+    genres = [genre.genre for genre in response_film.film.genres]
+    main_genre = get_main_genre(genres, genres_hierarchy)
+    result.append(genres)
+    result.append(main_genre)
+
     return result
 
 
@@ -509,6 +554,9 @@ def write_tags_to_mp4(film: list, file_path: str):
         video["----:com.apple.iTunes:kpra"] = MP4FreeForm(("").encode(), AtomDataType.UTF8)
     video["----:com.apple.iTunes:countr"] = MP4FreeForm((";".join(film[3])).encode(), AtomDataType.UTF8)
     video["----:com.apple.iTunes:kpid"] = MP4FreeForm((str(film[10])).encode(), AtomDataType.UTF8)
+    video["----:com.apple.iTunes:genre"] = MP4FreeForm((";".join(film[11])).encode(), AtomDataType.UTF8)
+    video["\xa9gen"] = str(film[12])
+
     try:
         video.save()
     except Exception as error:
@@ -548,6 +596,12 @@ def read_tags_from_mp4(file_path: str):
         result.append(video["----:com.apple.iTunes:Actors"][0].decode().split("\r\n")[1::2])
         result.append(Image.open(io.BytesIO(video["covr"][0])))
         result.append(video["----:com.apple.iTunes:kpid"][0].decode())
+        try:
+            result.append(video["----:com.apple.iTunes:genre"][0].decode().split(";"))
+            result.append(video["\xa9gen"][0] or "")
+        except:
+            result.append("")
+            result.append("")
     except Exception as e:
         return None
     return result
