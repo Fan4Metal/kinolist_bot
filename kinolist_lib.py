@@ -469,9 +469,8 @@ def write_all_films_to_docx_newformat(films: list, path: str, genres: bool = Fal
     font.name = 'Times New Roman'
     font.size = Pt(14)
 
-    for num, film in enumerate(films, start=1):
+    for num, film in tqdm(enumerate(films, start=1), desc="Запись в файл...         "):
         # Создаем параграф с нумерованным списком
-        # paragraph = doc.add_paragraph(style='List Number')
         paragraph = doc.add_paragraph()
         paragraph_format = paragraph.paragraph_format
         paragraph_format.space_after = Pt(12)
@@ -1004,7 +1003,7 @@ kl --loc                                  --создает список list.doc
             log.info(f"Найден файл: {os.path.basename(file)}")
         log.info(f"Всего: {len(mp4_files)}")
         full_films_list = []
-        for file in mp4_files:
+        for file in tqdm(mp4_files, desc="Загрузка тегов...        "):
             film_info = read_tags_from_mp4(file)
             if film_info:
                 full_films_list.append(film_info)
