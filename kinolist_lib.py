@@ -21,7 +21,7 @@ from tqdm import tqdm
 import PTN
 import win32com.client
 
-LIB_VER = "0.2.34"
+LIB_VER = "0.2.35"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -500,6 +500,7 @@ def write_all_films_to_docx_newformat(films: list, path: str, genres: bool = Fal
 
     # Сохраняем документ
     doc.save(path)
+    log.info(f'Файл "{path}" создан.')
 
 
 def write_all_films_to_txt(file, films):
