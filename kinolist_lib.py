@@ -21,7 +21,7 @@ from tqdm import tqdm
 import PTN
 import win32com.client
 
-LIB_VER = "0.2.35"
+LIB_VER = "0.2.36"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -778,6 +778,8 @@ kl --loc                                  --создает список list.doc
                                                 файл). Начиная с версии 0.2.24 все необходимые данные для создания
                                                 списка добавляются в теги файла. Рейтинг в теге kpra, начинающийся с "i"
                                                 (например: i6.7) интерпретируется как рейтинг IMDb.
+kl --loc --newformat                      --создает список из тегов файлов в новом формате
+kl --loc --a5                             --создает список из тегов файлов в формате A5 (для планшетов)
 
 
 * Можно указать Kinopoisk_id напрямую, используя тег KP~XXX в названии фильма (где XXX - Kinopoisk_id)
@@ -817,6 +819,7 @@ kl --loc                                  --создает список list.doc
                         help="создает список фильмов в формате docx из тегов mp4 файлов в текущем каталоге")
     parser.add_argument("-nf", "--newformat", action='store_true', help="модификатор для создания списка фильмов в новом формате")
     parser.add_argument("-g", "--genres", action='store_true', help="модификатор добавляет жанры в список фильмов")
+    parser.add_argument("--a5", action='store_true', help="Cписок в формате A5, работает пока только с параметром --loc")
 
     args = parser.parse_args()
 
@@ -1013,7 +1016,10 @@ kl --loc                                  --создает список list.doc
             if args.newformat:
                 write_all_films_to_docx_newformat(full_films_list, output, genres=args.genres)
             else:
-                template = "template.docx"
+                if args.a5:
+                    template = "template_a5.docx"
+                else:
+                    template = "template.docx"
                 file_path = get_resource_path(template)
                 doc = Document(file_path)
                 write_all_films_to_docx(doc, full_films_list, output, genres=args.genres)
