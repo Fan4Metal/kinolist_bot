@@ -21,7 +21,7 @@ from tqdm import tqdm
 import PTN
 import win32com.client
 
-LIB_VER = "0.2.36"
+LIB_VER = "0.2.36 - test sorting"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -820,6 +820,13 @@ kl --loc --a5                             --создает список из т�
     parser.add_argument("-nf", "--newformat", action='store_true', help="модификатор для создания списка фильмов в новом формате")
     parser.add_argument("-g", "--genres", action='store_true', help="модификатор добавляет жанры в список фильмов")
     parser.add_argument("--a5", action='store_true', help="Cписок в формате A5, работает пока только с параметром --loc")
+    parser.add_argument(
+        "--sort",
+        nargs=1,
+        help=
+        "Сортировка списка по тегам. Варианты: date - по дате создания, date_r - по дате создания в обратном порядке, datem - по дате изменения, "\
+            "datem_r - по дате изменения в обратном порядк, name - по имени, name_r - по имени в обратном порядке"
+    )
 
     args = parser.parse_args()
 
@@ -998,10 +1005,26 @@ kl --loc --a5                             --создает список из т�
         lnk_files_in_dir = glob.glob(os.path.join(path, '*.lnk'))
         mp4_files_from_lnk = [get_target(x) for x in lnk_files_in_dir if os.path.splitext(get_target(x))[1] == ".mp4"]
         mp4_files = mp4_files_in_dir + mp4_files_from_lnk
-        mp4_files.sort(key=os.path.basename)
-        if len(mp4_files) == 0:
+        if not mp4_files:
             log.warning(f'В каталоге "{path}" файлы mp4 не найдены.')
             return
+
+        # сортировка файлов
+        sort_options = {
+            "date": (os.path.getctime, False, "по дате создания"),
+            "date_r": (os.path.getctime, True, "по дате создания в обратном порядке"),
+            "datem": (os.path.getmtime, False, "по дате изменения"),
+            "datem_r": (os.path.getmtime, True, "по дате изменения в обратном порядке"),
+            "name": (os.path.basename, False, "по имени"),
+            "name_r": (os.path.basename, True, "по имени в обратном порядке")
+        }
+        if args.sort and args.sort[0] in sort_options.keys():
+            sort_option, reverse_option, message = sort_options.get(args.sort[0], (os.path.basename, False))
+            mp4_files.sort(key=sort_option, reverse=reverse_option)
+            log.info(f"Сортировка файлов: {message}")
+        else:
+            mp4_files.sort(key=os.path.basename)
+
         for file in mp4_files:
             log.info(f"Найден файл: {os.path.basename(file)}")
         log.info(f"Всего: {len(mp4_files)}")
