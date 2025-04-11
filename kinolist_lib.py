@@ -20,8 +20,9 @@ from PIL import Image
 from tqdm import tqdm
 import PTN
 import win32com.client
+import requests_cache
 
-LIB_VER = "0.2.36"
+LIB_VER = "0.2.37"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -807,7 +808,7 @@ kl --loc --a5                             --создает список из т�
                         nargs="?",
                         const=os.getcwd(),
                         help="удаляет все теги в файле mp4 (или во всех mp4 файлах в текущем каталоге)")
-    parser.add_argument("-r", "--rename", nargs="?", const=os.getcwd(), help="переименовывает mp4 файлыв в текущем каталоге")
+    parser.add_argument("-r", "--rename", nargs="?", const=os.getcwd(), help="переименовывает mp4 файлы в текущем каталоге")
     parser.add_argument("-l",
                         "--list",
                         nargs="?",
@@ -827,8 +828,23 @@ kl --loc --a5                             --создает список из т�
         "Сортировка списка по тегам. Варианты: date - по дате создания, date_r - по дате создания в обратном порядке, datem - по дате изменения, "\
             "datem_r - по дате изменения в обратном порядкe, name - по имени, name_r - по имени в обратном порядке"
     )
+    parser.add_argument("--nocache", action='store_true', help="Не использовать кэш")
+    parser.add_argument("--clearcache", action='store_true', help="Очистить кэш")
 
     args = parser.parse_args()
+
+    # загружаем кэш для запросов к Kinopoisk API
+    requests_cache.install_cache(get_resource_path('cache'), expire_after=3600)
+
+    # очищаем кэш при запуске с параметром --clearcache
+    if args.clearcache:
+        requests_cache.clear()
+        log.info("Кэш очищен.")
+        return
+
+    # отключаем кэш при запуске с параметром --nocache
+    if args.nocache:
+        requests_cache.uninstall_cache()
 
     # определяем выходной файл
     if args.output:
