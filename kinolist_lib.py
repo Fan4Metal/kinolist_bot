@@ -22,7 +22,7 @@ import PTN
 import win32com.client
 import requests_cache
 
-LIB_VER = "0.2.39"
+LIB_VER = "0.2.40"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -317,7 +317,8 @@ def get_film_info(film_code: int, api, shorten=False):
         rgb_image = image.convert('RGB')  # Fix "OSError: cannot write mode RGBA as JPEG"
         result.append(rgb_image)
     else:
-        result.append("")
+        cover = Image.open(get_resource_path("no_poster.jpg"))
+        result.append(cover)
     result.append(film_code)
 
     # Добавляем информацию о жанрах фильма
