@@ -6,10 +6,12 @@ import re
 import sys
 import textwrap
 import time
+import json
 from copy import deepcopy
 from pathlib import Path
 
-from requests import get
+
+import requests
 from docx import Document
 from docx.shared import Cm, Pt, RGBColor
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
@@ -161,9 +163,9 @@ def find_kp_id(film_list: list, api: str):
         payload = {'keyword': film, 'page': 1}
         headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
         try:
-            r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
+            r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
             if r.status_code == 200:
-                resp_json = r.json()
+                resp_json = json.loads(r.text)
                 if resp_json['searchFilmsCountResult'] == 0:
                     log.info(f'{film} не найден')
                     film_not_found.append(film)
@@ -181,8 +183,7 @@ def find_kp_id(film_list: list, api: str):
                 log.warning('Ошибка доступа к https://kinopoiskapiunofficial.tech')
                 return
         except Exception as e:
-            log.warning("Exeption:", str(e))
-            log.info(f'{film} не найден (exeption)')
+            log.warning(f"Exeption: {e}")
             film_not_found.append(film)
             continue
     return [film_codes, film_not_found]
@@ -204,9 +205,9 @@ def find_kp_id2(film: str, api: str):
     payload = {'keyword': film, 'page': 1}
     headers = {'X-API-KEY': api, 'Content-Type': 'application/json'}
     try:
-        r = get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
+        r = requests.get('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword', headers=headers, params=payload)
         if r.status_code == 200:
-            resp_json = r.json()
+            resp_json = json.loads(r.text)
             if resp_json['searchFilmsCountResult'] == 0:
                 log.info(f'{film} не найден')
                 return result
@@ -226,8 +227,8 @@ def find_kp_id2(film: str, api: str):
             log.warning('Ошибка доступа к https://kinopoiskapiunofficial.tech')
             return result
     except Exception as e:
-        log.warning("Exeption:", str(e))
-        log.info(f'{film} не найден (exeption)')
+        log.warning(f"Exeption: {e}")
+        log.info(f'{film} не найден')
         return result
 
 
@@ -303,7 +304,7 @@ def get_film_info(film_code: int, api, shorten=False):
 
     # загрузка постера
     cover_url = response_film.film.poster_url
-    cover = get(cover_url, stream=True)
+    cover = requests.get(cover_url, stream=True)
     if cover.status_code == 200:
         cover.raw.decode_content = True
         image = Image.open(cover.raw)
@@ -346,7 +347,7 @@ def get_full_film_list(film_codes: list, api: str, shorten=False):
             film_info = get_film_info(film_code, api, shorten)
             full_films_list.append(film_info)
         except Exception as e:
-            log.warning("Exeption:", str(e))
+            log.warning(f"Exeption: {e}")
         else:
             continue
     return full_films_list
