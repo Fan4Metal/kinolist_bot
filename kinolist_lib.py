@@ -22,7 +22,7 @@ import PTN
 import win32com.client
 import requests_cache
 
-LIB_VER = "0.2.37"
+LIB_VER = "0.2.39"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
@@ -618,7 +618,10 @@ def read_tags_from_mp4(file_path: str):
         result.append(video["----:com.apple.iTunes:DIRECTOR"][0].decode().split(";"))
         result.append(video["----:com.apple.iTunes:Actors"][0].decode().split("\r\n")[1::2])
         result.append(Image.open(io.BytesIO(video["covr"][0])))
-        result.append(video["----:com.apple.iTunes:kpid"][0].decode())
+        try:
+            result.append(video["----:com.apple.iTunes:kpid"][0].decode())
+        except:
+            result.append("")
         try:
             result.append(video["----:com.apple.iTunes:genre"][0].decode().split(";"))
             result.append(video["\xa9gen"][0] or "")
@@ -873,7 +876,10 @@ kl --loc --a5                             --создает список из т�
             log.info(f"Найдено фильмов: {len(kp_codes[0])}, не найдено: {len(kp_codes[1])}")
             return
         if kp_codes[0]:
-            template = "template.docx"
+            if args.a5:
+                template = "template_a5.docx"
+            else:
+                template = "template.docx"
             make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat, args.genres)
         else:
             log.info("Список не создан.")
@@ -891,7 +897,10 @@ kl --loc --a5                             --создает список из т�
         if len(kp_codes[0]) == 0:
             log.warning("Фильмы не найдены.")
             return
-        template = "template.docx"
+        if args.a5:
+            template = "template_a5.docx"
+        else:
+            template = "template.docx"
         make_docx(kp_codes[0], output, template, api, args.shorten, args.txtlist, args.newformat, args.genres)
 
     # запись тегов в mp4
